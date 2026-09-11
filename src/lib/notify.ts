@@ -93,6 +93,34 @@ async function send(payload: Record<string, unknown>): Promise<SendResult> {
   }
 }
 
+/**
+ * Invio di prova: serve a distinguere una configurazione assente da un
+ * rifiuto del servizio, senza dover leggere i log del server.
+ */
+export async function sendTestEmail(): Promise<SendResult> {
+  const to = notifyRecipients();
+  if (to.length === 0) {
+    return { ok: false, reason: "NOTIFY_EMAIL non è impostata: nessun destinatario." };
+  }
+
+  return send({
+    to,
+    subject: "Prova di invio — Calisthenics Academy",
+    html: shell(
+      "Email di prova",
+      "La configurazione funziona",
+      `<p style="margin:0;color:#3f3f46;font-size:14px">
+         Se stai leggendo questo messaggio, gli avvisi di nuova richiesta
+         arriveranno a tutti gli indirizzi configurati.
+       </p>
+       <p style="margin:16px 0 0;color:#71717a;font-size:13px">
+         Destinatari: ${escapeHtml(to.join(", "))}
+       </p>`
+    ),
+    text: `Configurazione email funzionante. Destinatari: ${to.join(", ")}`,
+  });
+}
+
 /** Avvisa i coach che c'e' una richiesta da approvare. */
 export async function notifyNewRequest(b: RequestNotification): Promise<SendResult> {
   const to = notifyRecipients();
