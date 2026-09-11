@@ -4,6 +4,8 @@ export type PublicSettings = {
   booking_horizon_days: number;
   min_notice_hours: number;
   max_trials_per_day: number;
+  min_age: number;
+  guardian_required_under_age: number;
   contact_email: string | null;
   contact_phone: string | null;
 };
@@ -50,6 +52,9 @@ export type Booking = {
   start_time: string;
   end_time: string;
   full_name: string;
+  birth_date: string | null;
+  guardian_name: string | null;
+  guardian_phone: string | null;
   email: string;
   phone: string;
   notes: string | null;
@@ -64,6 +69,8 @@ export type Settings = {
   max_trials_per_day: number;
   booking_horizon_days: number;
   min_notice_hours: number;
+  min_age: number;
+  guardian_required_under_age: number;
   contact_email: string | null;
   contact_phone: string | null;
 };

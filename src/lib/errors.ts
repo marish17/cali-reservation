@@ -7,6 +7,12 @@ const MESSAGES: Record<string, string> = {
   INVALID_EMAIL: "Inserisci un indirizzo email valido.",
   INVALID_PHONE: "Inserisci un numero di telefono valido.",
   NOTES_TOO_LONG: "Le note sono troppo lunghe.",
+  INVALID_BIRTH_DATE: "Inserisci una data di nascita valida.",
+  AGE_TOO_LOW: "L'età non raggiunge il minimo richiesto per partecipare.",
+  GUARDIAN_REQUIRED:
+    "Serve il nome di un genitore o tutore che accompagna il partecipante.",
+  GUARDIAN_PHONE_REQUIRED:
+    "Serve un recapito telefonico del genitore o tutore.",
   SLOT_NOT_FOUND: "Questo orario non è più disponibile.",
   SLOT_WRONG_DAY: "L'orario scelto non esiste in questa data.",
   DAY_CLOSED: "La palestra è chiusa in questa data.",

@@ -49,3 +49,18 @@ export function addDays(date: Date, days: number): Date {
   copy.setDate(copy.getDate() + days);
   return copy;
 }
+
+/** Anni compiuti alla data indicata (stessa regola usata dal database). */
+export function ageAt(birthISO: string, onISO: string): number | null {
+  if (!birthISO || !onISO) return null;
+  const birth = parseISODate(birthISO);
+  const on = parseISODate(onISO);
+  if (Number.isNaN(birth.getTime()) || Number.isNaN(on.getTime())) return null;
+
+  let age = on.getFullYear() - birth.getFullYear();
+  const beforeBirthday =
+    on.getMonth() < birth.getMonth() ||
+    (on.getMonth() === birth.getMonth() && on.getDate() < birth.getDate());
+  if (beforeBirthday) age -= 1;
+  return age;
+}

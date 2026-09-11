@@ -1,3 +1,5 @@
+-- Regole di capienza, tetto giornaliero, disdette, chiusure e preavviso.
+-- Da eseguire su un database usa-e-getta dopo 0001 e 0002.
 \set ON_ERROR_STOP on
 \pset pager off
 
@@ -24,12 +26,12 @@ select ga.start_time, ga.capacity, ga.booked, ga.remaining, ga.day_remaining
 from get_availability((select day from d),(select day from d)) ga order by 1;
 
 \echo '== 2. due prenotazioni sullo slot 10:00 (capienza 2) =='
-select day from book_trial((select slot_id from s10),(select day from d),'Anna Rossi','anna@test.it','3331112222');
-select day from book_trial((select slot_id from s10),(select day from d),'Bruno Verdi','bruno@test.it','3331112223');
+select day from book_trial((select slot_id from s10),(select day from d),'Anna Rossi','1990-01-01'::date,'anna@test.it','3331112222');
+select day from book_trial((select slot_id from s10),(select day from d),'Bruno Verdi','1990-01-01'::date,'bruno@test.it','3331112223');
 
 \echo '== 3. slot pieno -> atteso SLOT_FULL =='
 do $$ begin
-  perform book_trial((select slot_id from s10),(select day from d),'Carla Blu','carla@test.it','3331112224');
+  perform book_trial((select slot_id from s10),(select day from d),'Carla Blu','1990-01-01'::date,'carla@test.it','3331112224');
   raise exception 'FALLITO: la terza prenotazione sullo slot pieno e passata';
 exception when others then
   if sqlerrm like '%SLOT_FULL%' then raise notice 'OK: %', sqlerrm;
@@ -37,11 +39,11 @@ exception when others then
 end $$;
 
 \echo '== 4. terza prova del giorno su altro slot -> ok (tetto = 3) =='
-select day from book_trial((select slot_id from s18),(select day from d),'Carla Blu','carla@test.it','3331112224');
+select day from book_trial((select slot_id from s18),(select day from d),'Carla Blu','1990-01-01'::date,'carla@test.it','3331112224');
 
 \echo '== 5. quarta prova del giorno -> atteso DAY_FULL =='
 do $$ begin
-  perform book_trial((select slot_id from s18),(select day from d),'Dino Neri','dino@test.it','3331112225');
+  perform book_trial((select slot_id from s18),(select day from d),'Dino Neri','1990-01-01'::date,'dino@test.it','3331112225');
   raise exception 'FALLITO: superato il tetto giornaliero';
 exception when others then
   if sqlerrm like '%DAY_FULL%' then raise notice 'OK: %', sqlerrm;
@@ -59,7 +61,7 @@ from get_availability((select day from d),(select day from d)) ga order by 1;
 
 \echo '== 8. doppia prenotazione stessa email stesso giorno -> atteso ALREADY_BOOKED =='
 do $$ begin
-  perform book_trial((select slot_id from s10),(select day from d),'Bruno Verdi','BRUNO@test.it','3331112223');
+  perform book_trial((select slot_id from s10),(select day from d),'Bruno Verdi','1990-01-01'::date,'BRUNO@test.it','3331112223');
   raise exception 'FALLITO: doppia prenotazione con la stessa email';
 exception when others then
   if sqlerrm like '%ALREADY_BOOKED%' then raise notice 'OK: %', sqlerrm;
@@ -68,7 +70,7 @@ end $$;
 
 \echo '== 9. email non valida -> atteso INVALID_EMAIL =='
 do $$ begin
-  perform book_trial((select slot_id from s10),(select day from d),'Elsa Gialli','non-una-email','3331112226');
+  perform book_trial((select slot_id from s10),(select day from d),'Elsa Gialli','1990-01-01'::date,'non-una-email','3331112226');
   raise exception 'FALLITO: email non valida accettata';
 exception when others then
   if sqlerrm like '%INVALID_EMAIL%' then raise notice 'OK: %', sqlerrm;
@@ -95,7 +97,7 @@ do $$
 declare v_slot uuid;
 begin
   select id into v_slot from weekly_slots where weekday = extract(dow from (select day from d))::int limit 1;
-  perform book_trial(v_slot, (select day from d) + 3, 'Fabio Bianchi','fabio@test.it','3331112227');
+  perform book_trial(v_slot, (select day from d) + 3, 'Fabio Bianchi','1990-01-01'::date,'fabio@test.it','3331112227');
   raise exception 'FALLITO: slot accettato in un giorno della settimana diverso';
 exception when others then
   if sqlerrm like '%SLOT_WRONG_DAY%' then raise notice 'OK: %', sqlerrm;

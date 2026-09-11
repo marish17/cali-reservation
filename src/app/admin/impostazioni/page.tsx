@@ -79,6 +79,41 @@ export default function AdminSettingsPage() {
       </div>
 
       <div className="border-t border-line pt-5">
+        <h2 className="text-base font-semibold">Età dei partecipanti</h2>
+        <p className="mt-1 text-sm text-slate-400">
+          L&apos;età è calcolata dalla data di nascita, al giorno della prova.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="label">Età minima per partecipare</label>
+          <input
+            type="number"
+            min={0}
+            max={99}
+            className="field"
+            value={settings.min_age}
+            onChange={(e) => set("min_age", Number(e.target.value))}
+          />
+        </div>
+        <div>
+          <label className="label">Accompagnatore obbligatorio sotto i</label>
+          <input
+            type="number"
+            min={0}
+            max={99}
+            className="field"
+            value={settings.guardian_required_under_age}
+            onChange={(e) => set("guardian_required_under_age", Number(e.target.value))}
+          />
+          <p className="mt-1.5 text-xs text-slate-400">
+            Sotto questa età il form chiede nome e telefono del genitore o tutore.
+          </p>
+        </div>
+      </div>
+
+      <div className="border-t border-line pt-5">
         <h2 className="text-base font-semibold">Pagina pubblica</h2>
       </div>
 

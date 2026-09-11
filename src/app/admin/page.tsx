@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { formatDayLong, formatTime, toISODate } from "@/lib/date";
+import { ageAt, formatDayLong, formatTime, toISODate } from "@/lib/date";
 
 type Row = {
   id: string;
@@ -10,6 +10,9 @@ type Row = {
   start_time: string;
   end_time: string;
   full_name: string;
+  birth_date: string | null;
+  guardian_name: string | null;
+  guardian_phone: string | null;
   email: string;
   phone: string;
   notes: string | null;
@@ -33,7 +36,9 @@ export default function AdminBookingsPage() {
 
     let query = supabase
       .from("bookings")
-      .select("id, day, start_time, end_time, full_name, email, phone, notes, status, created_at, coaches(name)")
+      .select(
+        "id, day, start_time, end_time, full_name, birth_date, guardian_name, guardian_phone, email, phone, notes, status, created_at, coaches(name)"
+      )
       .order("day", { ascending: filter !== "past" })
       .order("start_time", { ascending: true })
       .limit(300);
@@ -107,7 +112,14 @@ export default function AdminBookingsPage() {
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold">{row.full_name}</p>
+                <p className="text-sm font-semibold">
+                  {row.full_name}
+                  {row.birth_date && (
+                    <span className="ml-2 text-xs font-normal text-slate-400">
+                      {ageAt(row.birth_date, row.day)} anni
+                    </span>
+                  )}
+                </p>
                 <p className="mt-0.5 text-xs text-slate-400">
                   {formatDayLong(row.day)} · {formatTime(row.start_time)}–{formatTime(row.end_time)}
                   {row.coaches ? ` · ${row.coaches.name}` : ""}
@@ -130,6 +142,13 @@ export default function AdminBookingsPage() {
                 {row.phone}
               </a>
             </div>
+
+            {row.guardian_name && (
+              <p className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs text-amber-100">
+                Minore accompagnato da {row.guardian_name}
+                {row.guardian_phone ? ` · ${row.guardian_phone}` : ""}
+              </p>
+            )}
 
             {row.notes && (
               <p className="mt-3 rounded-lg border border-line bg-ink/50 p-3 text-xs text-slate-300">

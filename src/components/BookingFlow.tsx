@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { bookingErrorMessage } from "@/lib/errors";
-import { addDays, formatDayLong, formatDayShort, formatTime, toISODate } from "@/lib/date";
+import { addDays, ageAt, formatDayLong, formatDayShort, formatTime, toISODate } from "@/lib/date";
 import type { Availability, PublicSettings } from "@/lib/types";
 
 type Confirmation = {
@@ -13,16 +12,29 @@ type Confirmation = {
   start_time: string;
   end_time: string;
   coach_name: string;
+  age: number;
+  guardian_required: boolean;
 };
 
 type Form = {
   full_name: string;
+  birth_date: string;
   email: string;
   phone: string;
+  guardian_name: string;
+  guardian_phone: string;
   notes: string;
 };
 
-const EMPTY_FORM: Form = { full_name: "", email: "", phone: "", notes: "" };
+const EMPTY_FORM: Form = {
+  full_name: "",
+  birth_date: "",
+  email: "",
+  phone: "",
+  guardian_name: "",
+  guardian_phone: "",
+  notes: "",
+};
 
 export default function BookingFlow() {
   const [settings, setSettings] = useState<PublicSettings | null>(null);
@@ -92,6 +104,12 @@ export default function BookingFlow() {
   const currentDay = days.find((d) => d.day === selectedDay) ?? null;
   const currentSlot = currentDay?.slots.find((s) => s.slot_id === selectedSlot) ?? null;
 
+  // L'eta' che conta e' quella compiuta il giorno della prova.
+  const age = currentSlot ? ageAt(form.birth_date, currentSlot.day) : null;
+  const ageTooLow = age !== null && settings !== null && age < settings.min_age;
+  const needsGuardian =
+    age !== null && settings !== null && !ageTooLow && age < settings.guardian_required_under_age;
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!currentSlot || !selectedDay) return;
@@ -99,26 +117,44 @@ export default function BookingFlow() {
     setSubmitting(true);
     setFormError(null);
 
-    const { data, error } = await supabase.rpc("book_trial", {
-      p_slot_id: currentSlot.slot_id,
-      p_day: selectedDay,
-      p_full_name: form.full_name,
-      p_email: form.email,
-      p_phone: form.phone,
-      p_notes: form.notes || null,
-    });
+    // Passiamo dal server: cosi' la notifica al coach parte anche se
+    // l'utente chiude la pagina subito dopo l'invio.
+    const response = await fetch("/api/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slot_id: currentSlot.slot_id,
+        day: selectedDay,
+        full_name: form.full_name,
+        birth_date: form.birth_date,
+        email: form.email,
+        phone: form.phone,
+        guardian_name: form.guardian_name || null,
+        guardian_phone: form.guardian_phone || null,
+        notes: form.notes || null,
+      }),
+    }).catch(() => null);
 
     setSubmitting(false);
 
-    if (error) {
-      setFormError(bookingErrorMessage(error));
-      // La disponibilita' e' cambiata sotto i piedi: ricarichiamola.
+    if (!response) {
+      setFormError("Connessione non riuscita. Controlla la rete e riprova.");
+      return;
+    }
+
+    const result = (await response.json().catch(() => null)) as
+      | { booking?: Confirmation; error?: string }
+      | null;
+
+    if (!response.ok || !result?.booking) {
+      setFormError(result?.error ?? "Non è stato possibile completare la prenotazione.");
+      // La disponibilita' potrebbe essere cambiata sotto i piedi.
       void load();
       setSelectedSlot(null);
       return;
     }
 
-    setConfirmation((data as Confirmation[])[0]);
+    setConfirmation(result.booking);
   }
 
   if (loading) {
@@ -267,6 +303,34 @@ export default function BookingFlow() {
               />
             </div>
 
+
+            <div className="sm:col-span-2">
+              <label className="label" htmlFor="birth_date">
+                Data di nascita
+              </label>
+              <input
+                id="birth_date"
+                type="date"
+                className="field"
+                required
+                max={toISODate(new Date())}
+                value={form.birth_date}
+                onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
+              />
+              {age !== null && (
+                <p
+                  className={[
+                    "mt-1.5 text-xs",
+                    ageTooLow ? "text-red-300" : "text-slate-400",
+                  ].join(" ")}
+                >
+                  {ageTooLow
+                    ? `Per partecipare bisogna avere almeno ${settings?.min_age} anni.`
+                    : `${age} anni il giorno della prova.`}
+                </p>
+              )}
+            </div>
+
             <div>
               <label className="label" htmlFor="email">
                 Email
@@ -297,6 +361,44 @@ export default function BookingFlow() {
               />
             </div>
 
+
+            {needsGuardian && (
+              <div className="sm:col-span-2 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4">
+                <p className="text-sm text-amber-100">
+                  Sotto i {settings?.guardian_required_under_age} anni la prova si svolge
+                  accompagnati da un genitore o tutore, che deve essere presente in palestra.
+                </p>
+
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="label" htmlFor="guardian_name">
+                      Nome e cognome del genitore
+                    </label>
+                    <input
+                      id="guardian_name"
+                      className="field"
+                      required
+                      value={form.guardian_name}
+                      onChange={(e) => setForm({ ...form, guardian_name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="guardian_phone">
+                      Telefono del genitore
+                    </label>
+                    <input
+                      id="guardian_phone"
+                      type="tel"
+                      className="field"
+                      required
+                      value={form.guardian_phone}
+                      onChange={(e) => setForm({ ...form, guardian_phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="sm:col-span-2">
               <label className="label" htmlFor="notes">
                 Note per il coach (facoltativo)
@@ -318,7 +420,11 @@ export default function BookingFlow() {
             )}
 
             <div className="sm:col-span-2">
-              <button type="submit" className="btn-primary w-full sm:w-auto" disabled={submitting}>
+              <button
+                type="submit"
+                className="btn-primary w-full sm:w-auto"
+                disabled={submitting || ageTooLow}
+              >
                 {submitting ? "Invio in corso..." : "Conferma la prenotazione"}
               </button>
             </div>
@@ -369,6 +475,12 @@ function Confirmed({
           </div>
         )}
       </dl>
+
+      {confirmation.guardian_required && (
+        <p className="mt-5 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-amber-100">
+          Ricorda: il giorno della prova serve la presenza del genitore o tutore indicato.
+        </p>
+      )}
 
       <div className="mt-6 rounded-xl border border-line bg-ink/50 p-4">
         <p className="text-sm text-slate-300">
