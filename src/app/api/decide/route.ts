@@ -13,7 +13,7 @@ type DecideResult = {
   day: string;
   start_time: string;
   end_time: string;
-  status: "approved" | "rejected";
+  status: "approved" | "rejected" | "cancelled";
   note: string | null;
 };
 
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     day: decision.day,
     start_time: decision.start_time,
     end_time: decision.end_time,
-    approved: decision.status === "approved",
+    status: decision.status,
     note: decision.note,
   });
 

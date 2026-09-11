@@ -69,10 +69,15 @@ export default function AdminBookingsPage() {
     void load();
   }, [load]);
 
-  async function decide(row: Row, status: "approved" | "rejected") {
+  async function decide(row: Row, status: "approved" | "rejected" | "cancelled") {
     if (!session) return;
-    const label = status === "approved" ? "Confermare" : "Rifiutare";
-    if (!confirm(`${label} la prova di ${row.full_name}? Gli arriverà una email.`)) return;
+    const label =
+      status === "approved"
+        ? `Confermare la prova di ${row.full_name}?`
+        : status === "rejected"
+          ? `Rifiutare la richiesta di ${row.full_name}?`
+          : `Annullare la prova di ${row.full_name}? Il posto tornerà libero e la persona va avvisata.`;
+    if (!confirm(label)) return;
 
     setBusyId(row.id);
     setError(null);
@@ -101,9 +106,8 @@ export default function AdminBookingsPage() {
 
     if (body?.email && !body.email.ok) {
       setEmailWarning(
-        `Decisione registrata, ma l'email a ${row.full_name} non è partita` +
-          `${body.email.reason ? ` (${body.email.reason})` : ""}. ` +
-          `Avvisalo tu: ${row.email}`
+        `Decisione registrata. L'avviso automatico non è partito, quindi ` +
+          `avvisa tu ${row.full_name}: ${row.phone} · ${row.email}`
       );
     }
 
@@ -207,33 +211,51 @@ export default function AdminBookingsPage() {
               </p>
             )}
 
-            {row.status === "pending" && (
+            {(row.status === "pending" || row.status === "approved") && (
               <div className="mt-4 border-t border-line pt-4">
                 <label className="label" htmlFor={`note-${row.id}`}>
-                  Messaggio per la persona (facoltativo)
+                  {row.status === "pending"
+                    ? "Messaggio per la persona (facoltativo)"
+                    : "Motivo dell'annullamento (facoltativo)"}
                 </label>
                 <input
                   id={`note-${row.id}`}
                   className="field"
-                  placeholder="Es. Ci vediamo alle 18, porta scarpe da ginnastica"
+                  placeholder={
+                    row.status === "pending"
+                      ? "Es. Ci vediamo alle 18, porta scarpe da ginnastica"
+                      : "Es. Imprevisto del coach, ti ricontattiamo"
+                  }
                   value={notes[row.id] ?? ""}
                   onChange={(e) => setNotes({ ...notes, [row.id]: e.target.value })}
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    className="btn-primary !px-4 !py-2 text-xs"
-                    disabled={busyId === row.id}
-                    onClick={() => void decide(row, "approved")}
-                  >
-                    {busyId === row.id ? "Attendi…" : "Conferma la prova"}
-                  </button>
-                  <button
-                    className="btn-ghost !px-4 !py-2 text-xs"
-                    disabled={busyId === row.id}
-                    onClick={() => void decide(row, "rejected")}
-                  >
-                    Rifiuta
-                  </button>
+                  {row.status === "pending" ? (
+                    <>
+                      <button
+                        className="btn-primary !px-4 !py-2 text-xs"
+                        disabled={busyId === row.id}
+                        onClick={() => void decide(row, "approved")}
+                      >
+                        {busyId === row.id ? "Attendi…" : "Conferma la prova"}
+                      </button>
+                      <button
+                        className="btn-ghost !px-4 !py-2 text-xs"
+                        disabled={busyId === row.id}
+                        onClick={() => void decide(row, "rejected")}
+                      >
+                        Rifiuta
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="btn-ghost !px-4 !py-2 text-xs"
+                      disabled={busyId === row.id}
+                      onClick={() => void decide(row, "cancelled")}
+                    >
+                      {busyId === row.id ? "Attendi…" : "Annulla la prova"}
+                    </button>
+                  )}
                 </div>
               </div>
             )}

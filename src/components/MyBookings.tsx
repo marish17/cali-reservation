@@ -16,6 +16,7 @@ type Row = {
   end_time: string;
   status: string;
   decision_note: string | null;
+  decided_at: string | null;
   notes: string | null;
 };
 
@@ -30,7 +31,7 @@ export default function MyBookings() {
     setLoading(true);
     const { data, error } = await supabase
       .from("bookings")
-      .select("id, day, start_time, end_time, status, decision_note, notes")
+      .select("id, day, start_time, end_time, status, decision_note, decided_at, notes")
       .order("day", { ascending: false });
     if (error) setError("Non riusciamo a caricare le tue richieste.");
     else setRows((data as Row[]) ?? []);
@@ -97,7 +98,21 @@ export default function MyBookings() {
 
             {row.status === "pending" && (
               <p className="mt-3 text-xs text-slate-400">
-                Il coach non ha ancora risposto. Ti avvisiamo via email.
+                Il coach non ha ancora risposto. Ricontrolla questa pagina più tardi: appena
+                decide, l&apos;esito compare qui.
+              </p>
+            )}
+
+            {row.status === "approved" && (
+              <p className="mt-3 text-xs text-slate-400">
+                Ti aspettiamo. Presentati qualche minuto prima, con abbigliamento sportivo.
+              </p>
+            )}
+
+            {row.status === "cancelled" && row.decided_at && (
+              <p className="mt-3 text-xs text-slate-400">
+                Questa prova è stata annullata dalla palestra. Puoi richiederne un&apos;altra
+                quando vuoi.
               </p>
             )}
 

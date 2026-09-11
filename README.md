@@ -36,7 +36,15 @@ conservazione.
    la volta dopo i dati sono già precompilati, il consenso no: si ridà ogni volta
 4. La richiesta nasce **in attesa** e tiene occupato il posto
 5. Il coach riceve una email e da `/admin` conferma o rifiuta, con un messaggio facoltativo
-6. L'utente riceve l'esito via email e lo rivede in `/le-mie-prenotazioni`
+6. L'utente vede l'esito in `/le-mie-prenotazioni`, dove torna a controllare
+
+Finché il mittente delle email non è verificato, l'avviso di esito alla persona
+non parte: per questo il sito le dice di tornare a controllare, e il pannello
+mostra al coach telefono ed email quando un avviso non è stato recapitato.
+
+Una prova già confermata può essere annullata dal coach in caso di imprevisto,
+con un motivo facoltativo: il posto torna subito libero. Resta distinguibile da
+una disdetta della persona, perché registra chi ha deciso.
 
 Un rifiuto libera subito il posto. L'utente può annullare da solo una richiesta
 finché la prova non è passata.
@@ -88,6 +96,7 @@ incolla per intero, **in ordine**:
 4. `supabase/migrations/0004_gym_name.sql` — nome della palestra
 5. `supabase/migrations/0005_coach_access.sql` — gestione degli accessi dal pannello
 6. `supabase/migrations/0006_privacy.sql` — informativa privacy e consenso
+7. `supabase/migrations/0007_coach_cancel.sql` — annullamento di una prova da parte del coach
 
 Per sapere quali risultano già applicate:
 `supabase/checks/verifica_migrazioni.sql` risponde con un elenco leggibile e
@@ -258,6 +267,10 @@ progetto di produzione), ognuna su un database pulito:
   al pannello, email senza account, revoca a se stessi
 - `supabase/tests/privacy_test.sql` — richiesta rifiutata senza consenso, momento
   del consenso registrato, informativa leggibile da chiunque ma modificabile solo dai coach
+- `supabase/tests/coach_cancel_test.sql` — annullamento da parte del coach, posto
+  liberato, doppio annullamento, chi può annullare
+
+Fuori dal database, `npm test` verifica la lettura degli indirizzi destinatari.
 - `supabase/tests/security_test.sql` — chi può leggere e scrivere cosa: verifica
   che un visitatore non veda nessun dato personale, che un utente registrato veda
   soltanto i propri, e che non possa scrivere direttamente nelle tabelle

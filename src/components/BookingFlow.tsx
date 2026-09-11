@@ -281,8 +281,9 @@ export default function BookingFlow() {
         <span className="badge border-accent/60 text-accentSoft">Richiesta inviata</span>
         <h2 className="mt-4 text-2xl font-semibold">Ci siamo quasi</h2>
         <p className="mt-2 text-sm text-slate-300">
-          Il coach deve confermare la disponibilità per questo orario. Ti scriviamo via email
-          appena decide: il posto resta tenuto da parte fino ad allora.
+          Il coach deve confermare la disponibilità per questo orario. Il posto resta tenuto
+          da parte fino ad allora: torna su <strong>Le mie richieste</strong> per vedere se è
+          stata accettata.
         </p>
 
         <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">

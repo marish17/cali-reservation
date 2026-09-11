@@ -24,7 +24,7 @@ export type DecisionNotification = {
   day: string;
   start_time: string;
   end_time: string;
-  approved: boolean;
+  status: "approved" | "rejected" | "cancelled";
   note: string | null;
 };
 
@@ -189,6 +189,31 @@ export async function notifyNewRequest(b: RequestNotification): Promise<SendResu
 export async function notifyDecision(d: DecisionNotification): Promise<SendResult> {
   const when = `${formatDayLong(d.day)}, ${formatTime(d.start_time)}–${formatTime(d.end_time)}`;
 
+  const copy = {
+    approved: {
+      kicker: "Prova confermata",
+      title: `${d.full_name}, la tua prova è confermata`,
+      subject: `Prova confermata — ${formatDayLong(d.day)} ${formatTime(d.start_time)}`,
+      closing: "Ti aspettiamo: presentati qualche minuto prima con abbigliamento sportivo.",
+      plain: "La tua prova è confermata.",
+    },
+    rejected: {
+      kicker: "Richiesta non accolta",
+      title: `${d.full_name}, non possiamo accogliere questa data`,
+      subject: `Richiesta non accolta — ${formatDayLong(d.day)} ${formatTime(d.start_time)}`,
+      closing: "Puoi scegliere un altro giorno dalla pagina delle prenotazioni.",
+      plain: "La tua richiesta non è stata accolta.",
+    },
+    cancelled: {
+      kicker: "Prova annullata",
+      title: `${d.full_name}, dobbiamo annullare la tua prova`,
+      subject: `Prova annullata — ${formatDayLong(d.day)} ${formatTime(d.start_time)}`,
+      closing:
+        "Ci dispiace per il contrattempo: puoi riprenotare un altro giorno dalla pagina delle prenotazioni.",
+      plain: "La tua prova è stata annullata.",
+    },
+  }[d.status];
+
   const inner = `<table style="border-collapse:collapse;width:100%">
       ${row("Quando", when)}
     </table>
@@ -199,32 +224,12 @@ export async function notifyDecision(d: DecisionNotification): Promise<SendResul
            </p>`
         : ""
     }
-    <p style="margin:20px 0 0;color:#52525b;font-size:13px">
-      ${
-        d.approved
-          ? "Ti aspettiamo: presentati qualche minuto prima con abbigliamento sportivo."
-          : "Puoi scegliere un altro giorno dalla pagina delle prenotazioni."
-      }
-    </p>`;
+    <p style="margin:20px 0 0;color:#52525b;font-size:13px">${copy.closing}</p>`;
 
   return send({
     to: [d.to],
-    subject: d.approved
-      ? `Prova confermata — ${formatDayLong(d.day)} ${formatTime(d.start_time)}`
-      : `Richiesta non accolta — ${formatDayLong(d.day)} ${formatTime(d.start_time)}`,
-    html: shell(
-      d.approved ? "Prova confermata" : "Richiesta non accolta",
-      d.approved
-        ? `${d.full_name}, la tua prova è confermata`
-        : `${d.full_name}, non possiamo accogliere questa data`,
-      inner
-    ),
-    text: [
-      d.approved ? "La tua prova è confermata." : "La tua richiesta non è stata accolta.",
-      when,
-      d.note ?? "",
-    ]
-      .filter(Boolean)
-      .join("\n"),
+    subject: copy.subject,
+    html: shell(copy.kicker, copy.title, inner),
+    text: [copy.plain, when, d.note ?? ""].filter(Boolean).join("\n"),
   });
 }
