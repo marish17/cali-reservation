@@ -192,6 +192,18 @@ e **nessuno riesce a prenotare**. È l'errore più facile da fare pubblicando.
 Le variabili d'ambiente si leggono al momento della build: dopo averle
 cambiate serve un nuovo deploy, non basta salvarle.
 
+### Lo scanner dei segreti
+
+Netlify fa fallire la build se il valore di una variabile compare nei file
+prodotti. Per `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e
+`NOTIFY_FROM` è normale che compaia, ed è per questo che `netlify.toml` le
+esclude tramite `SECRETS_SCAN_OMIT_KEYS`. I due valori `NEXT_PUBLIC_…` devono
+raggiungere il browser per funzionare: a proteggere i dati sono le policy RLS,
+non la loro segretezza.
+
+`RESEND_API_KEY` è volutamente esclusa da quell'elenco: quella è un segreto
+vero, e se finisse nei file della build è giusto che la build si fermi.
+
 ## Test delle regole di prenotazione
 
 Due suite, da eseguire su un database Postgres usa-e-getta (**non** sul

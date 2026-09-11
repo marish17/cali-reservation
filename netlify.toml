@@ -7,7 +7,25 @@
   publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
+
+  # Lo scanner di Netlify segnala qualunque variabile il cui valore
+  # finisca nei file prodotti dalla build. Queste tre ci finiscono per
+  # progetto, non per errore:
+  #
+  # - NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY devono
+  #   stare nel browser: sono l'indirizzo del database e la chiave
+  #   pubblica con cui il sito lo interroga. A proteggere i dati sono
+  #   le policy RLS, verificate in supabase/tests/security_test.sql,
+  #   non la segretezza di questi due valori. Il prefisso NEXT_PUBLIC_
+  #   dichiara esattamente questo.
+  # - NOTIFY_FROM è l'intestazione "Da:" delle email, e compare nel
+  #   codice come valore predefinito. Un mittente non è un segreto.
+  #
+  # RESEND_API_KEY resta volutamente fuori da questo elenco: quella è
+  # un segreto vero, e se un giorno finisse nei file della build la
+  # build deve fallire.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,NOTIFY_FROM"
 
 # Il runtime Next.js serve le route server (/api/request, /api/decide)
 # e la rigenerazione della home. Senza, il sito verrebbe trattato come
