@@ -10,15 +10,12 @@ alter table public.bookings add column if not exists privacy_accepted_at timesta
 -- Bozza di partenza. I campi fra parentesi quadre vanno compilati da
 -- /admin/impostazioni: finche' restano cosi', la pagina lo segnala.
 update public.settings set
-  privacy_text = $txt$## Chi tratta i tuoi dati
-
-Il titolare del trattamento è [RAGIONE SOCIALE], con sede in [INDIRIZZO COMPLETO], codice fiscale / partita IVA [CF O P.IVA], contattabile all'indirizzo [EMAIL DI CONTATTO].
 
 ## Quali dati raccogliamo
 
 Per gestire la richiesta di lezione di prova raccogliamo: nome e cognome, data di nascita, indirizzo email, numero di telefono e le eventuali note che scrivi tu nel modulo.
 
-Se il partecipante ha meno di [SOGLIA] anni raccogliamo anche nome, cognome e recapito telefonico del genitore o di chi ne fa le veci.
+Se il partecipante ha meno di 14 anni raccogliamo anche nome, cognome e recapito telefonico del genitore o di chi ne fa le veci.
 
 ## Perché li trattiamo
 
@@ -34,7 +31,7 @@ Se il partecipante è minorenne, la richiesta deve essere inviata da un genitore
 
 ## Per quanto tempo li conserviamo
 
-Conserviamo i dati della richiesta per [PERIODO, ad esempio 12 mesi] dalla data della prova, dopodiché vengono cancellati. Se dopo la prova inizi un percorso con noi, i dati vengono conservati secondo le regole del rapporto di associazione o del contratto.
+Conserviamo i dati della richiesta per 12 mesi dalla data della prova, dopodiché vengono cancellati. Se dopo la prova inizi un percorso con noi, i dati vengono conservati secondo le regole del rapporto di associazione o del contratto.
 
 ## A chi li comunichiamo
 
@@ -42,7 +39,7 @@ I dati non vengono venduti né ceduti a terzi per finalità proprie. Sono tratta
 
 ## I tuoi diritti
 
-Puoi in ogni momento chiedere di accedere ai tuoi dati, correggerli, cancellarli, limitarne il trattamento, opporti al trattamento o riceverli in formato leggibile. Per farlo scrivi a [EMAIL DI CONTATTO].
+Puoi in ogni momento chiedere di accedere ai tuoi dati, correggerli, cancellarli, limitarne il trattamento, opporti al trattamento o riceverli in formato leggibile. Per farlo scrivi a arnaldo01campilongo@gmail.com.
 
 Se ritieni che il trattamento violi la normativa puoi proporre reclamo al Garante per la protezione dei dati personali (www.garanteprivacy.it).
 
