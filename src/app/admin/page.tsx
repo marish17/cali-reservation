@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useSession } from "@/lib/useSession";
 import StatusBadge from "@/components/StatusBadge";
+import { bookingErrorMessage } from "@/lib/errors";
 import { ageAt, formatDayLong, formatTime, toISODate } from "@/lib/date";
 
 type Row = {
@@ -33,14 +33,13 @@ const FILTERS: [Filter, string][] = [
 ];
 
 export default function AdminBookingsPage() {
-  const { session } = useSession();
   const [rows, setRows] = useState<Row[]>([]);
   const [filter, setFilter] = useState<Filter>("pending");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [emailWarning, setEmailWarning] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -70,46 +69,38 @@ export default function AdminBookingsPage() {
   }, [load]);
 
   async function decide(row: Row, status: "approved" | "rejected" | "cancelled") {
-    if (!session) return;
     const label =
       status === "approved"
         ? `Confermare la prova di ${row.full_name}?`
         : status === "rejected"
           ? `Rifiutare la richiesta di ${row.full_name}?`
-          : `Annullare la prova di ${row.full_name}? Il posto tornerà libero e la persona va avvisata.`;
+          : `Annullare la prova di ${row.full_name}? Il posto tornerà libero.`;
     if (!confirm(label)) return;
 
     setBusyId(row.id);
     setError(null);
-    setEmailWarning(null);
+    setNotice(null);
 
-    const response = await fetch("/api/decide", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ booking_id: row.id, status, note: notes[row.id] ?? null }),
-    }).catch(() => null);
+    const { error } = await supabase.rpc("decide_booking", {
+      p_booking_id: row.id,
+      p_status: status,
+      p_note: notes[row.id] || null,
+    });
 
     setBusyId(null);
 
-    if (!response || !response.ok) {
-      const body = (await response?.json().catch(() => null)) as { error?: string } | null;
-      setError(body?.error ?? "Operazione non riuscita.");
+    if (error) {
+      setError(bookingErrorMessage(error));
       return;
     }
 
-    const body = (await response.json().catch(() => null)) as
-      | { email?: { ok: boolean; reason?: string } }
-      | null;
-
-    if (body?.email && !body.email.ok) {
-      setEmailWarning(
-        `Decisione registrata. L'avviso automatico non è partito, quindi ` +
-          `avvisa tu ${row.full_name}: ${row.phone} · ${row.email}`
-      );
-    }
+    // Nessuna email in giro: la persona lo scopre rientrando nell'app.
+    // Se la prova è imminente, un colpo di telefono è più sicuro.
+    setNotice(
+      status === "cancelled"
+        ? `Prova annullata. ${row.full_name} lo vedrà rientrando nell'app; se è a ridosso, avvisalo al ${row.phone}.`
+        : null
+    );
 
     setNotes((current) => ({ ...current, [row.id]: "" }));
     void load();
@@ -137,12 +128,12 @@ export default function AdminBookingsPage() {
 
       {error && <p className="card border-red-500/40 text-sm text-red-200">{error}</p>}
 
-      {emailWarning && (
+      {notice && (
         <div className="card border-accent/45 bg-accent/[0.07]">
-          <p className="text-sm text-slate-200">{emailWarning}</p>
+          <p className="text-sm text-slate-200">{notice}</p>
           <button
             className="btn-ghost mt-3 !px-3 !py-1.5 text-xs"
-            onClick={() => setEmailWarning(null)}
+            onClick={() => setNotice(null)}
           >
             Ho capito
           </button>

@@ -2,22 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useSession } from "@/lib/useSession";
 import type { Settings } from "@/lib/types";
 
-type EmailCheck = {
-  ok: boolean;
-  reason?: string;
-  detail?: string;
-  hasApiKey: boolean;
-  recipients: string[];
-  invalidRecipients: string[];
-  rawRecipients: string;
-  sender: string;
-};
 
 export default function AdminSettingsPage() {
-  const { session } = useSession();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -209,94 +197,6 @@ export default function AdminSettingsPage() {
       </div>
     </form>
 
-    <EmailDiagnostics accessToken={session?.access_token ?? null} />
     </>
-  );
-}
-
-function EmailDiagnostics({ accessToken }: { accessToken: string | null }) {
-  const [result, setResult] = useState<EmailCheck | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function run() {
-    if (!accessToken) return;
-    setBusy(true);
-    setResult(null);
-
-    const response = await fetch("/api/email-check", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }).catch(() => null);
-
-    setBusy(false);
-    const body = (await response?.json().catch(() => null)) as EmailCheck | null;
-    if (body) setResult(body);
-  }
-
-  return (
-    <section className="card">
-      <h2 className="text-base font-semibold">Email di avviso</h2>
-      <p className="mt-1 text-sm text-slate-400">
-        Prova l&apos;invio e mostra la risposta esatta del servizio. Utile quando le email
-        non arrivano e non si capisce perché.
-      </p>
-
-      <button className="btn-ghost mt-4" onClick={() => void run()} disabled={busy || !accessToken}>
-        {busy ? "Invio…" : "Invia un'email di prova"}
-      </button>
-
-      {result && (
-        <div
-          className={[
-            "mt-4 rounded-xl border p-4 text-sm",
-            result.ok ? "border-accent/45 bg-accent/[0.07]" : "border-red-500/40 bg-red-500/10",
-          ].join(" ")}
-        >
-          <p className="font-semibold text-white">
-            {result.ok ? "Email inviata." : "Invio non riuscito."}
-          </p>
-
-          {!result.ok && result.reason && (
-            <p className="mt-1.5 text-slate-200">{result.reason}</p>
-          )}
-
-          <dl className="mt-3 space-y-1 text-xs text-slate-400">
-            <div>Chiave del servizio: {result.hasApiKey ? "presente" : "MANCANTE"}</div>
-            <div>Mittente: {result.sender}</div>
-            <div>
-              Destinatari:{" "}
-              {result.recipients.length ? result.recipients.join(", ") : "NESSUNO"}
-            </div>
-            {result.invalidRecipients?.length > 0 && (
-              <div className="text-red-300">
-                Scartati perché non validi: {result.invalidRecipients.join(" | ")}
-              </div>
-            )}
-            {result.rawRecipients !== undefined && (
-              <div>
-                Valore di NOTIFY_EMAIL:{" "}
-                <code className="rounded bg-black/40 px-1 py-0.5">
-                  {result.rawRecipients || "(vuoto)"}
-                </code>
-              </div>
-            )}
-          </dl>
-
-          {!result.ok && result.detail && (
-            <pre className="mt-3 overflow-x-auto rounded-lg bg-black/40 p-3 text-xs text-slate-300">
-              {result.detail}
-            </pre>
-          )}
-
-          {result.ok && (
-            <p className="mt-3 text-xs text-slate-400">
-              Se non la vedi arrivare, guarda nello spam. Col mittente condiviso di prova,
-              il servizio consegna soltanto all&apos;indirizzo con cui è stato registrato
-              l&apos;account.
-            </p>
-          )}
-        </div>
-      )}
-    </section>
   );
 }

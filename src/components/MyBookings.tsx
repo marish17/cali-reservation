@@ -25,17 +25,32 @@ export default function MyBookings() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [seenAt, setSeenAt] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!session) return;
     setLoading(true);
+
+    // Il momento dell'ultima lettura va preso PRIMA di segnarla, se no
+    // le novità appena arrivate risulterebbero già viste.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("notifications_seen_at")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+    setSeenAt(profile?.notifications_seen_at ?? null);
+
     const { data, error } = await supabase
       .from("bookings")
       .select("id, day, start_time, end_time, status, decision_note, decided_at, notes")
       .order("day", { ascending: false });
+
     if (error) setError("Non riusciamo a caricare le tue richieste.");
     else setRows((data as Row[]) ?? []);
     setLoading(false);
+
+    // Aprire questa pagina è il gesto con cui si prende visione.
+    await supabase.rpc("mark_notifications_seen");
   }, [session]);
 
   useEffect(() => {
@@ -56,7 +71,7 @@ export default function MyBookings() {
       <div className="card">
         <SignIn
           title="Accedi per vedere le tue richieste"
-          description="Ti mandiamo un link via email, senza password."
+          description="Con la stessa email e password usate per prenotare."
         />
       </div>
     );
@@ -84,8 +99,13 @@ export default function MyBookings() {
       {rows.map((row) => {
         const upcoming = row.day >= today;
         const cancellable = upcoming && (row.status === "pending" || row.status === "approved");
+        const isNew =
+          row.decided_at !== null && (seenAt === null || row.decided_at > seenAt);
         return (
-          <article key={row.id} className="card">
+          <article
+            key={row.id}
+            className={["card", isNew ? "border-accent/60" : ""].join(" ")}
+          >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">{formatDayLong(row.day)}</p>
@@ -93,7 +113,14 @@ export default function MyBookings() {
                   {formatTime(row.start_time)} – {formatTime(row.end_time)}
                 </p>
               </div>
-              <StatusBadge status={row.status} />
+              <span className="flex items-center gap-2">
+                {isNew && (
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-white">
+                    novità
+                  </span>
+                )}
+                <StatusBadge status={row.status} />
+              </span>
             </div>
 
             {row.status === "pending" && (

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { bookingErrorMessage } from "@/lib/errors";
 import { useSession } from "@/lib/useSession";
 import Calendar from "@/components/Calendar";
 import SignIn from "@/components/SignIn";
@@ -215,44 +216,35 @@ export default function BookingFlow() {
     setSubmitting(true);
     setFormError(null);
 
-    const response = await fetch("/api/request", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        slot_id: currentSlot.slot_id,
-        day: selectedDay,
-        full_name: form.full_name,
-        birth_date: form.birth_date,
-        phone: form.phone,
-        guardian_name: form.guardian_name || null,
-        guardian_phone: form.guardian_phone || null,
-        notes: form.notes || null,
-        privacy_accepted: form.privacy_accepted,
-      }),
-    }).catch(() => null);
+    const { data, error } = await supabase.rpc("request_trial", {
+      p_slot_id: currentSlot.slot_id,
+      p_day: selectedDay,
+      p_full_name: form.full_name,
+      p_birth_date: form.birth_date,
+      p_phone: form.phone,
+      p_privacy_accepted: form.privacy_accepted,
+      p_guardian_name: form.guardian_name || null,
+      p_guardian_phone: form.guardian_phone || null,
+      p_notes: form.notes || null,
+    });
 
     setSubmitting(false);
 
-    if (!response) {
-      setFormError("Connessione non riuscita. Controlla la rete e riprova.");
-      return;
-    }
-
-    const result = (await response.json().catch(() => null)) as
-      | { booking?: Confirmation; error?: string }
-      | null;
-
-    if (!response.ok || !result?.booking) {
-      setFormError(result?.error ?? "Non è stato possibile inviare la richiesta.");
+    if (error) {
+      setFormError(bookingErrorMessage(error));
+      // La disponibilita' potrebbe essere cambiata sotto i piedi.
       void load();
       setSelectedSlot(null);
       return;
     }
 
-    setConfirmation(result.booking);
+    const booking = ((data as Confirmation[]) ?? [])[0];
+    if (!booking) {
+      setFormError("Non è stato possibile inviare la richiesta.");
+      return;
+    }
+
+    setConfirmation(booking);
   }
 
   if (loading) {
@@ -282,8 +274,8 @@ export default function BookingFlow() {
         <h2 className="mt-4 text-2xl font-semibold">Ci siamo quasi</h2>
         <p className="mt-2 text-sm text-slate-300">
           Il coach deve confermare la disponibilità per questo orario. Il posto resta tenuto
-          da parte fino ad allora: torna su <strong>Le mie richieste</strong> per vedere se è
-          stata accettata.
+          da parte fino ad allora. Rientra qui e apri <strong>Le mie richieste</strong>: appena
+          risponde, accanto alla voce compare il numero delle novità.
         </p>
 
         <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
@@ -403,8 +395,8 @@ export default function BookingFlow() {
             <div className="mt-4">
               <SignIn
                 title="Serve un account per richiedere la prova"
-                description="Ti mandiamo un link via email: niente password. Ci serve per confermarti l'orario e per farti seguire la richiesta."
-                onBeforeSend={() => savePending(currentSlot.day, currentSlot.slot_id)}
+                description="Bastano email e password. Ci servono per confermarti l'orario e per farti seguire la richiesta."
+                onBeforeSubmit={() => savePending(currentSlot.day, currentSlot.slot_id)}
               />
             </div>
           ) : (

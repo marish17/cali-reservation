@@ -2,10 +2,14 @@
 
 Web app pubblica per prenotare la lezione di prova: l'utente sceglie giorno e
 orario tra quelli in cui il coach è effettivamente presente, con un tetto
-massimo di prove per giornata. Chi prenota accede con un link via email e
-invia una **richiesta**: la prova è confermata solo quando il coach la
-approva, e l'esito arriva per email. Coach, orari e approvazioni si
-gestiscono da un pannello riservato.
+massimo di prove per giornata. Chi prenota si registra con email e password e
+invia una **richiesta**: la prova è confermata solo quando il coach la approva.
+Coach, orari e approvazioni si gestiscono da un pannello riservato.
+
+**L'app non invia email.** Le notifiche vivono dentro il sito: un contatore
+accanto a *Le mie richieste* per chi prenota, uno sulle richieste da evadere per
+il coach, e un avviso del browser quando ne arriva una nuova. L'indirizzo email
+serve solo come nome utente, e resta nel database.
 
 - **Stack**: Next.js 14 (App Router, TypeScript, Tailwind) + Supabase (Postgres, Auth, RLS)
 - **Pagine pubbliche**: `/` prenotazione, `/le-mie-prenotazioni` stato delle proprie richieste, `/privacy` informativa
@@ -31,20 +35,22 @@ conservazione.
 ## Il giro completo
 
 1. Il visitatore sceglie giorno e orario dal calendario
-2. Per proseguire accede con un link via email (niente password)
+2. Per proseguire crea un account con email e password
 3. Compila nome, data di nascita e telefono, e accetta l'informativa privacy —
    la volta dopo i dati sono già precompilati, il consenso no: si ridà ogni volta
 4. La richiesta nasce **in attesa** e tiene occupato il posto
-5. Il coach riceve una email e da `/admin` conferma o rifiuta, con un messaggio facoltativo
-6. L'utente vede l'esito in `/le-mie-prenotazioni`, dove torna a controllare
-
-Finché il mittente delle email non è verificato, l'avviso di esito alla persona
-non parte: per questo il sito le dice di tornare a controllare, e il pannello
-mostra al coach telefono ed email quando un avviso non è stato recapitato.
+5. Il coach la vede nel pannello, col contatore delle richieste da evadere, e
+   conferma o rifiuta con un messaggio facoltativo
+6. Rientrando nel sito, la persona trova il numero delle novità accanto a
+   *Le mie richieste* e lì l'esito, evidenziato
 
 Una prova già confermata può essere annullata dal coach in caso di imprevisto,
 con un motivo facoltativo: il posto torna subito libero. Resta distinguibile da
-una disdetta della persona, perché registra chi ha deciso.
+una disdetta della persona, perché registra chi ha deciso. Senza email, per un
+imprevisto a ridosso conviene telefonare: il pannello mostra il numero.
+
+Il coach può attivare gli **avvisi del browser** dal pannello, per accorgersi di
+una nuova richiesta senza tenere la pagina sott'occhio.
 
 Un rifiuto libera subito il posto. L'utente può annullare da solo una richiesta
 finché la prova non è passata.
@@ -97,6 +103,7 @@ incolla per intero, **in ordine**:
 5. `supabase/migrations/0005_coach_access.sql` — gestione degli accessi dal pannello
 6. `supabase/migrations/0006_privacy.sql` — informativa privacy e consenso
 7. `supabase/migrations/0007_coach_cancel.sql` — annullamento di una prova da parte del coach
+8. `supabase/migrations/0008_in_app_notifications.sql` — notifiche dentro l'app
 
 Per sapere quali risultano già applicate:
 `supabase/checks/verifica_migrazioni.sql` risponde con un elenco leggibile e
@@ -107,16 +114,14 @@ Ogni file va eseguito in una query separata.
 **Attenzione**: la terza migrazione cancella le prenotazioni esistenti. Erano
 state fatte senza account e non c'è modo di ricondurle a un utente.
 
-### 1b. Accesso con link via email
+### 1b. Registrazione senza email
 
-Supabase → **Authentication → URL Configuration**:
+Supabase → **Authentication → Sign In / Providers → Email**: disattiva
+**Confirm email**.
 
-- **Site URL**: `http://localhost:3000` in sviluppo, l'indirizzo del sito una
-  volta pubblicato
-- **Redirect URLs**: aggiungi entrambi, `http://localhost:3000/**` e
-  `https://tuo-sito.vercel.app/**`
-
-Senza questi due valori il link ricevuto per email non riporta all'app.
+È il passaggio che rende il sito utilizzabile senza un servizio di posta: con
+la conferma attiva, ogni registrazione resta in sospeso in attesa di un
+messaggio che non verrà mai inviato.
 
 Facoltativo: `supabase/seed.sql` inserisce un coach e alcune fasce di esempio.
 
@@ -159,52 +164,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 La chiave `anon` è pensata per stare nel browser: le policy RLS e le funzioni
 `security definer` sono ciò che protegge i dati. **Non** inserire mai qui la
 chiave `service_role`.
-
-### 3b. Email (facoltativo)
-
-Due email automatiche: una al coach a ogni nuova richiesta (nome, età, giorno,
-orario, contatti, accompagnatore se minore) e una all'utente quando il coach
-decide, col messaggio che il coach ha eventualmente scritto. Per attivarle:
-
-1. Registrati su [resend.com](https://resend.com) (piano gratuito: 100 email al giorno)
-2. **API Keys** → crea una chiave
-3. Aggiungi a `.env.local`:
-
-```
-RESEND_API_KEY=re_...
-NOTIFY_EMAIL=coach@tuapalestra.it
-NOTIFY_FROM=Prenotazioni <onboarding@resend.dev>
-```
-
-`NOTIFY_EMAIL` accetta più indirizzi separati da virgola: per avvisare tutti i
-coach basta elencarli.
-
-```
-NOTIFY_EMAIL=marco@tuapalestra.it,luca@tuapalestra.it,sara@tuapalestra.it
-```
-
-`NOTIFY_FROM` è la trappola più comune: Resend spedisce **solo** da un dominio
-che hai verificato tu. Mettere lì il tuo indirizzo personale (Gmail, iCloud,
-Outlook…) fa fallire ogni invio, silenziosamente per l'utente e con un errore
-nei log. Finché non hai verificato un dominio, lascia esattamente
-`onboarding@resend.dev`.
-
-Sempre con `onboarding@resend.dev`, Resend consegna **solo** all'indirizzo con
-cui ti sei registrato. È la ragione per cui, in questa configurazione, l'avviso
-al coach arriva e quello di esito alla persona che ha prenotato no: il primo va
-al tuo indirizzo, il secondo a un indirizzo qualunque. Per far partire anche
-quello serve verificare un dominio su Resend e usarlo in `NOTIFY_FROM`.
-
-Finché non è verificato, il pannello avvisa il coach quando un'email di esito
-non è partita, indicando l'indirizzo della persona da contattare a mano.
-
-Senza queste variabili l'app funziona identica, solo senza email. Se Resend
-fosse irraggiungibile la prenotazione viene comunque registrata: l'errore
-finisce nei log, non sulla faccia del cliente.
-
-La prenotazione passa da una route server (`/api/book`), quindi l'email parte
-anche se l'utente chiude la pagina subito dopo l'invio, e la chiave di Resend
-non arriva mai al browser.
 
 ### 4. Avvio
 
@@ -269,8 +228,8 @@ progetto di produzione), ognuna su un database pulito:
   del consenso registrato, informativa leggibile da chiunque ma modificabile solo dai coach
 - `supabase/tests/coach_cancel_test.sql` — annullamento da parte del coach, posto
   liberato, doppio annullamento, chi può annullare
-
-Fuori dal database, `npm test` verifica la lettura degli indirizzi destinatari.
+- `supabase/tests/notifications_test.sql` — conteggio delle novità per l'utente,
+  coda delle richieste per il coach, presa visione, separazione fra utenti
 - `supabase/tests/security_test.sql` — chi può leggere e scrivere cosa: verifica
   che un visitatore non veda nessun dato personale, che un utente registrato veda
   soltanto i propri, e che non possa scrivere direttamente nelle tabelle
@@ -305,6 +264,8 @@ supabase/           migrazione, seed e test delle regole
 
 ## Passi successivi possibili
 
-- Promemoria automatico il giorno prima della prova
-- Rate limit per IP sulle prenotazioni anonime
+- Promemoria il giorno prima della prova, dentro l'app
 - Export CSV delle prenotazioni
+- Email, se un giorno servirà: va configurato un SMTP in Supabase per i
+  messaggi di autenticazione, e da lì si può riattivare anche l'invio degli
+  esiti

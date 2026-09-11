@@ -4,6 +4,8 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/lib/useSession";
+import { useCount } from "@/lib/useCount";
+import CountBadge from "@/components/CountBadge";
 
 /**
  * Barra di servizio in cima alla pagina. In fondo, da telefono,
@@ -25,9 +27,10 @@ export default function TopBar({ gymName }: { gymName: string }) {
       <nav className="ml-auto flex items-center gap-2 text-xs">
         <Link
           href="/le-mie-prenotazioni"
-          className="rounded-lg border border-line px-3 py-1.5 text-slate-200 transition hover:border-slate-500 hover:bg-white/5"
+          className="inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-slate-200 transition hover:border-slate-500 hover:bg-white/5"
         >
           Le mie richieste
+          {session && <MyUpdatesBadge />}
         </Link>
         <Link
           href="/admin"
@@ -50,4 +53,10 @@ export default function TopBar({ gymName }: { gymName: string }) {
       )}
     </div>
   );
+}
+
+/** Quante risposte del coach la persona non ha ancora visto. */
+function MyUpdatesBadge() {
+  const { count } = useCount("my_updates_count");
+  return <CountBadge count={count} />;
 }

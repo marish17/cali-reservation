@@ -14,8 +14,9 @@ export default function MyBookingsPage() {
 
       <h1 className="text-2xl font-bold">Le mie richieste</h1>
       <p className="mt-2 text-sm text-slate-400">
-        Lo stato di ogni prova richiesta si aggiorna qui: torna a controllare per sapere se
-        il coach l&apos;ha confermata. Da qui puoi anche annullarla se non ti serve più.
+        Lo stato di ogni prova richiesta si aggiorna qui. Quando il coach risponde, il
+        numero delle novità compare in alto accanto a <strong>Le mie richieste</strong>. Da
+        qui puoi anche annullare una prova che non ti serve più.
       </p>
       <div className="mt-6">
         <MyBookings />
