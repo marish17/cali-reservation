@@ -4,7 +4,23 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Prenota la tua prova di Calisthenics",
   description:
-    "Prenota gratuitamente la tua lezione di prova di calisthenics: scegli giorno, orario e coach.",
+    "Prenota gratuitamente la tua lezione di prova di calisthenics: scegli giorno e orario.",
+  // I file stanno in public/. Se mancano, il browser ricade sul
+  // comportamento predefinito senza rompere nulla.
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
+  openGraph: {
+    title: "Prenota la tua prova di Calisthenics",
+    description: "Scegli giorno e orario e richiedi la tua lezione di prova.",
+    images: ["/icon.png"],
+    type: "website",
+  },
+};
+
+export const viewport = {
+  themeColor: "#0a0a0b",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

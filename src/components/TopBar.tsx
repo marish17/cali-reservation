@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/lib/useSession";
 
@@ -14,11 +15,11 @@ export default function TopBar({ gymName }: { gymName: string }) {
 
   return (
     <div className="mb-8 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line pb-3">
-      <Link
-        href="/"
-        className="text-xs font-semibold uppercase tracking-[0.2em] text-accentSoft"
-      >
-        {gymName}
+      <Link href="/" className="flex items-center gap-2.5">
+        <Logo size={32} />
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-accentSoft">
+          {gymName}
+        </span>
       </Link>
 
       <nav className="ml-auto flex items-center gap-2 text-xs">
