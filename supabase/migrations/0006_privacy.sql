@@ -10,6 +10,9 @@ alter table public.bookings add column if not exists privacy_accepted_at timesta
 -- Bozza di partenza. I campi fra parentesi quadre vanno compilati da
 -- /admin/impostazioni: finche' restano cosi', la pagina lo segnala.
 update public.settings set
+  privacy_text = $txt$## Chi tratta i tuoi dati
+
+Il titolare del trattamento è [RAGIONE SOCIALE], con sede in [INDIRIZZO COMPLETO], codice fiscale / partita IVA [CF O P.IVA], contattabile all'indirizzo arnaldo01campilongo@gmail.com.
 
 ## Quali dati raccogliamo
 
