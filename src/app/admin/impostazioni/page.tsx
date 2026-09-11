@@ -1,0 +1,132 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { Settings } from "@/lib/types";
+
+export default function AdminSettingsPage() {
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.from("settings").select("*").eq("id", true).single();
+      if (data) setSettings(data as Settings);
+    })();
+  }, []);
+
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    if (!settings) return;
+    setStatus("saving");
+    const { error } = await supabase
+      .from("settings")
+      .update({ ...settings, updated_at: new Date().toISOString() })
+      .eq("id", true);
+    setStatus(error ? "error" : "saved");
+  }
+
+  if (!settings) return <p className="card text-sm text-slate-400">Caricamento…</p>;
+
+  const set = <K extends keyof Settings>(key: K, value: Settings[K]) => {
+    setSettings({ ...settings, [key]: value });
+    setStatus("idle");
+  };
+
+  return (
+    <form className="card space-y-5" onSubmit={save}>
+      <div>
+        <h2 className="text-base font-semibold">Regole di prenotazione</h2>
+        <p className="mt-1 text-sm text-slate-400">
+          Valgono per tutta la palestra e sono applicate dal database, non dal browser.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div>
+          <label className="label">Prove max al giorno</label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            className="field"
+            value={settings.max_trials_per_day}
+            onChange={(e) => set("max_trials_per_day", Number(e.target.value))}
+          />
+        </div>
+        <div>
+          <label className="label">Giorni prenotabili in anticipo</label>
+          <input
+            type="number"
+            min={1}
+            max={365}
+            className="field"
+            value={settings.booking_horizon_days}
+            onChange={(e) => set("booking_horizon_days", Number(e.target.value))}
+          />
+        </div>
+        <div>
+          <label className="label">Preavviso minimo (ore)</label>
+          <input
+            type="number"
+            min={0}
+            max={168}
+            className="field"
+            value={settings.min_notice_hours}
+            onChange={(e) => set("min_notice_hours", Number(e.target.value))}
+          />
+        </div>
+      </div>
+
+      <div className="border-t border-line pt-5">
+        <h2 className="text-base font-semibold">Pagina pubblica</h2>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label className="label">Nome della palestra</label>
+          <input
+            className="field"
+            value={settings.gym_name}
+            onChange={(e) => set("gym_name", e.target.value)}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="label">Testo introduttivo</label>
+          <textarea
+            className="field min-h-[80px] resize-y"
+            value={settings.intro_text}
+            onChange={(e) => set("intro_text", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="label">Email di contatto</label>
+          <input
+            type="email"
+            className="field"
+            value={settings.contact_email ?? ""}
+            onChange={(e) => set("contact_email", e.target.value || null)}
+          />
+        </div>
+        <div>
+          <label className="label">Telefono di contatto</label>
+          <input
+            className="field"
+            value={settings.contact_phone ?? ""}
+            onChange={(e) => set("contact_phone", e.target.value || null)}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 border-t border-line pt-5">
+        <button className="btn-primary" type="submit" disabled={status === "saving"}>
+          {status === "saving" ? "Salvataggio…" : "Salva"}
+        </button>
+        {status === "saved" && <span className="text-sm text-accent">Impostazioni salvate.</span>}
+        {status === "error" && (
+          <span className="text-sm text-red-200">Errore durante il salvataggio.</span>
+        )}
+      </div>
+    </form>
+  );
+}

@@ -1,0 +1,47 @@
+import BookingFlow from "@/components/BookingFlow";
+import SetupNotice from "@/components/SetupNotice";
+import { createServerClient } from "@/lib/supabase-server";
+import type { PublicSettings } from "@/lib/types";
+
+export const revalidate = 60;
+
+async function loadSettings(): Promise<PublicSettings | null> {
+  const client = createServerClient();
+  if (!client) return null;
+  const { data } = await client.rpc("get_public_settings");
+  return ((data as PublicSettings[]) ?? [])[0] ?? null;
+}
+
+export default async function HomePage() {
+  const configured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+  const settings = configured ? await loadSettings() : null;
+
+  return (
+    <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:py-16">
+      <header className="mb-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+          {settings?.gym_name ?? "Calisthenics"}
+        </p>
+        <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
+          Prenota la tua prova gratuita
+        </h1>
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-400">
+          {settings?.intro_text ??
+            "Scegli il giorno e l'orario in cui il coach è presente. Bastano trenta secondi."}
+        </p>
+      </header>
+
+      {configured ? <BookingFlow /> : <SetupNotice />}
+
+      <footer className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-6 text-xs text-slate-500">
+        {settings?.contact_email && <span>{settings.contact_email}</span>}
+        {settings?.contact_phone && <span>{settings.contact_phone}</span>}
+        <a className="ml-auto hover:text-slate-300" href="/admin">
+          Area coach
+        </a>
+      </footer>
+    </main>
+  );
+}
