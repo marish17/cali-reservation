@@ -1,4 +1,8 @@
 import { formatDayLong, formatTime } from "@/lib/date";
+import { notifyRecipients, parseRecipients } from "@/lib/recipients";
+
+export { parseRecipients, notifyRecipients };
+export type { Recipients } from "@/lib/recipients";
 
 export type RequestNotification = {
   full_name: string;
@@ -28,12 +32,10 @@ export type SendResult =
   | { ok: true }
   | { ok: false; reason: string; detail?: string };
 
-/** Destinatari degli avvisi: uno o piu' indirizzi separati da virgola. */
-export function notifyRecipients(): string[] {
-  return (process.env.NOTIFY_EMAIL ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
+/** Il mittente accetta sia "email@x.it" sia "Nome <email@x.it>". */
+export function notifySender(): string {
+  const raw = (process.env.NOTIFY_FROM ?? "").trim().replace(/^["']|["']$/g, "");
+  return raw || "Prenotazioni <onboarding@resend.dev>";
 }
 
 function escapeHtml(value: string): string {
@@ -76,7 +78,7 @@ async function send(payload: Record<string, unknown>): Promise<SendResult> {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: process.env.NOTIFY_FROM ?? "Prenotazioni <onboarding@resend.dev>",
+        from: notifySender(),
         ...payload,
       }),
     });
@@ -98,9 +100,14 @@ async function send(payload: Record<string, unknown>): Promise<SendResult> {
  * rifiuto del servizio, senza dover leggere i log del server.
  */
 export async function sendTestEmail(): Promise<SendResult> {
-  const to = notifyRecipients();
+  const { valid: to, invalid } = parseRecipients();
   if (to.length === 0) {
-    return { ok: false, reason: "NOTIFY_EMAIL non è impostata: nessun destinatario." };
+    return {
+      ok: false,
+      reason: invalid.length
+        ? `Nessun destinatario valido in NOTIFY_EMAIL. Valore rifiutato: ${invalid.join(" | ")}`
+        : "NOTIFY_EMAIL non è impostata: nessun destinatario.",
+    };
   }
 
   return send({
@@ -123,9 +130,14 @@ export async function sendTestEmail(): Promise<SendResult> {
 
 /** Avvisa i coach che c'e' una richiesta da approvare. */
 export async function notifyNewRequest(b: RequestNotification): Promise<SendResult> {
-  const to = notifyRecipients();
+  const { valid: to, invalid } = parseRecipients();
   if (to.length === 0) {
-    return { ok: false, reason: "NOTIFY_EMAIL non è impostata: nessun destinatario." };
+    return {
+      ok: false,
+      reason: invalid.length
+        ? `Nessun destinatario valido in NOTIFY_EMAIL. Valore rifiutato: ${invalid.join(" | ")}`
+        : "NOTIFY_EMAIL non è impostata: nessun destinatario.",
+    };
   }
 
   const rows = [

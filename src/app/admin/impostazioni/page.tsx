@@ -11,6 +11,8 @@ type EmailCheck = {
   detail?: string;
   hasApiKey: boolean;
   recipients: string[];
+  invalidRecipients: string[];
+  rawRecipients: string;
   sender: string;
 };
 
@@ -265,6 +267,19 @@ function EmailDiagnostics({ accessToken }: { accessToken: string | null }) {
               Destinatari:{" "}
               {result.recipients.length ? result.recipients.join(", ") : "NESSUNO"}
             </div>
+            {result.invalidRecipients?.length > 0 && (
+              <div className="text-red-300">
+                Scartati perché non validi: {result.invalidRecipients.join(" | ")}
+              </div>
+            )}
+            {result.rawRecipients !== undefined && (
+              <div>
+                Valore di NOTIFY_EMAIL:{" "}
+                <code className="rounded bg-black/40 px-1 py-0.5">
+                  {result.rawRecipients || "(vuoto)"}
+                </code>
+              </div>
+            )}
           </dl>
 
           {!result.ok && result.detail && (

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { bearerToken, createUserClient } from "@/lib/supabase-server";
-import { notifyRecipients, sendTestEmail } from "@/lib/notify";
+import { parseRecipients, sendTestEmail, notifySender } from "@/lib/notify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,11 +29,16 @@ export async function POST(request: Request) {
   }
 
   const result = await sendTestEmail();
+  const { valid, invalid } = parseRecipients();
 
   return NextResponse.json({
     ...result,
     hasApiKey: Boolean(process.env.RESEND_API_KEY),
-    recipients: notifyRecipients(),
-    sender: process.env.NOTIFY_FROM ?? "(predefinito) onboarding@resend.dev",
+    recipients: valid,
+    invalidRecipients: invalid,
+    // Il valore grezzo è la cosa che risolve il problema più in fretta:
+    // rende visibile una virgoletta o uno spazio di troppo.
+    rawRecipients: process.env.NOTIFY_EMAIL ?? "",
+    sender: notifySender(),
   });
 }
