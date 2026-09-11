@@ -28,7 +28,7 @@ $$;
 -- Impostazioni globali (riga singola)
 create table if not exists public.settings (
   id                   boolean primary key default true check (id),
-  gym_name             text    not null default 'Calisthenics Club',
+  gym_name             text    not null default 'Calisthenics Academy',
   intro_text           text    not null default 'Prenota la tua prova gratuita: scegli il giorno e l''orario con il coach.',
   max_trials_per_day   int     not null default 3  check (max_trials_per_day >= 0),
   booking_horizon_days int     not null default 30 check (booking_horizon_days between 1 and 365),
