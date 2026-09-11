@@ -9,7 +9,7 @@ gestiscono da un pannello riservato.
 
 - **Stack**: Next.js 14 (App Router, TypeScript, Tailwind) + Supabase (Postgres, Auth, RLS)
 - **Pagine pubbliche**: `/` prenotazione, `/le-mie-prenotazioni` stato delle proprie richieste
-- **Area riservata**: `/admin` (approvazioni, coach e orari, chiusure, impostazioni)
+- **Area riservata**: `/admin` (approvazioni, coach e orari, chiusure, impostazioni, accessi)
 
 ## Il giro completo
 
@@ -67,6 +67,8 @@ incolla per intero, **in ordine**:
 1. `supabase/migrations/0001_init.sql` — tabelle, policy di sicurezza, logica di prenotazione
 2. `supabase/migrations/0002_age_and_guardian.sql` — data di nascita, età minima, accompagnatore
 3. `supabase/migrations/0003_accounts_and_approval.sql` — account, richieste in attesa, approvazione
+4. `supabase/migrations/0004_gym_name.sql` — nome della palestra
+5. `supabase/migrations/0005_coach_access.sql` — gestione degli accessi dal pannello
 
 Ogni file va eseguito in una query separata.
 
@@ -96,7 +98,21 @@ insert into public.admins (user_id, email)
 select id, email from auth.users where email = 'tua@email.it';
 ```
 
-Solo gli utenti presenti in `admins` possono entrare in `/admin`.
+Solo gli utenti presenti in `admins` possono entrare in `/admin`. Questa query
+serve **una volta sola**, per il primo coach: da lì in poi gli altri accessi si
+danno da `/admin/accessi`, senza toccare SQL.
+
+### Aggiungere gli altri coach
+
+1. La persona apre il sito e accede almeno una volta col link via email (basta
+   iniziare una prenotazione). Serve perché il suo account esista e l'indirizzo
+   risulti verificato: così non si può dare accesso a una casella sbagliata.
+2. Un coach già abilitato va su `/admin/accessi`, inserisce quell'email e
+   conferma.
+
+Accesso al pannello e presenza in palestra restano due cose distinte: perché gli
+orari di un coach compaiano nel calendario va aggiunto anche in
+`/admin/orari`.
 
 ### 3. Variabili d'ambiente
 
@@ -215,6 +231,8 @@ progetto di produzione), ognuna su un database pulito:
   calcolo dell'età al giorno della prova, date di nascita non valide
 - `supabase/tests/approval_rules_test.sql` — account obbligatorio, posto tenuto
   dalle richieste in attesa, approvazione e rifiuto, chi può decidere, annullamento
+- `supabase/tests/coach_access_test.sql` — chi può concedere e revocare l'accesso
+  al pannello, email senza account, revoca a se stessi
 - `supabase/tests/security_test.sql` — chi può leggere e scrivere cosa: verifica
   che un visitatore non veda nessun dato personale, che un utente registrato veda
   soltanto i propri, e che non possa scrivere direttamente nelle tabelle

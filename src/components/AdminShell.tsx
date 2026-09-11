@@ -10,6 +10,7 @@ const NAV = [
   { href: "/admin/orari", label: "Coach e orari" },
   { href: "/admin/chiusure", label: "Chiusure" },
   { href: "/admin/impostazioni", label: "Impostazioni" },
+  { href: "/admin/accessi", label: "Accessi" },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {

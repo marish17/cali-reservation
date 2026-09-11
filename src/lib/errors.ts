@@ -24,6 +24,10 @@ const MESSAGES: Record<string, string> = {
   NOT_FOUND: "Prenotazione non trovata.",
   NOT_AUTHENTICATED: "Accedi per richiedere una prova.",
   NOT_ALLOWED: "Operazione riservata ai coach.",
+  USER_NOT_FOUND:
+    "Nessun account con questa email. Chiedi alla persona di accedere una volta dal sito, poi riprova.",
+  CANNOT_REMOVE_SELF:
+    "Non puoi togliere l'accesso a te stesso. Chiedilo a un altro coach.",
   INVALID_STATUS: "Stato non valido.",
   ALREADY_CANCELLED: "La richiesta è stata annullata dall'utente.",
 };

@@ -1,5 +1,5 @@
 import BookingFlow from "@/components/BookingFlow";
-import SessionBar from "@/components/SessionBar";
+import TopBar from "@/components/TopBar";
 import SetupNotice from "@/components/SetupNotice";
 import { createServerClient } from "@/lib/supabase-server";
 import { readSupabaseEnv } from "@/lib/env";
@@ -27,11 +27,10 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:py-16">
+      <TopBar gymName={settings?.gym_name ?? "Calisthenics Academy"} />
+
       <header className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accentSoft">
-          {settings?.gym_name ?? "Calisthenics"}
-        </p>
-        <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
+        <h1 className="text-3xl font-bold leading-tight sm:text-4xl">
           Prenota la tua prova gratuita
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-400">
@@ -40,20 +39,14 @@ export default async function HomePage() {
         </p>
       </header>
 
-      {configured && <SessionBar />}
-
       {configured ? <BookingFlow /> : <SetupNotice />}
 
-      <footer className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-6 text-xs text-slate-500">
-        {settings?.contact_email && <span>{settings.contact_email}</span>}
-        {settings?.contact_phone && <span>{settings.contact_phone}</span>}
-        <a className="hover:text-slate-300" href="/le-mie-prenotazioni">
-          Le mie richieste
-        </a>
-        <a className="ml-auto hover:text-slate-300" href="/admin">
-          Area coach
-        </a>
-      </footer>
+      {(settings?.contact_email || settings?.contact_phone) && (
+        <footer className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-6 text-xs text-slate-500">
+          {settings?.contact_email && <span>{settings.contact_email}</span>}
+          {settings?.contact_phone && <span>{settings.contact_phone}</span>}
+        </footer>
+      )}
     </main>
   );
 }
