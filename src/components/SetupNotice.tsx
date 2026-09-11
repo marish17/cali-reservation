@@ -1,7 +1,7 @@
 export default function SetupNotice() {
   return (
-    <div className="card border-amber-500/40 bg-amber-500/5">
-      <h2 className="text-lg font-semibold text-amber-200">Configurazione mancante o non valida</h2>
+    <div className="card border-accent/45 bg-accent/[0.07]">
+      <h2 className="text-lg font-semibold text-white">Configurazione mancante o non valida</h2>
       <p className="mt-2 text-sm text-slate-300">
         Serve un file <code className="rounded bg-black/40 px-1.5 py-0.5">.env.local</code> nella
         cartella del progetto (vedi <code className="rounded bg-black/40 px-1.5 py-0.5">.env.example</code>)

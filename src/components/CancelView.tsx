@@ -75,15 +75,11 @@ export default function CancelView() {
           <dt className="text-slate-400">Giorno</dt>
           <dd>{formatDayLong(booking.day)}</dd>
         </div>
-        <div className="flex justify-between border-b border-line pb-2">
+        <div className="flex justify-between">
           <dt className="text-slate-400">Orario</dt>
           <dd>
             {formatTime(booking.start_time)} – {formatTime(booking.end_time)}
           </dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-slate-400">Coach</dt>
-          <dd>{booking.coach_name}</dd>
         </div>
       </dl>
 

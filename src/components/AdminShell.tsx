@@ -52,8 +52,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   if (state === "denied") {
     return (
       <div className="mx-auto max-w-md px-4 py-20">
-        <div className="card border-amber-500/40">
-          <h1 className="text-lg font-semibold text-amber-200">Accesso non autorizzato</h1>
+        <div className="card border-accent/45">
+          <h1 className="text-lg font-semibold text-white">Accesso non autorizzato</h1>
           <p className="mt-2 text-sm text-slate-300">
             L&apos;utente {email} non è tra gli amministratori. Aggiungilo alla tabella{" "}
             <code className="rounded bg-black/40 px-1.5 py-0.5">admins</code> in Supabase.
@@ -90,7 +90,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             className={[
               "rounded-xl border px-3 py-2 text-sm transition",
               pathname === item.href
-                ? "border-accent bg-accent/10 text-accent"
+                ? "border-accent bg-accent/10 text-accentSoft"
                 : "border-line text-slate-300 hover:border-slate-500",
             ].join(" ")}
           >

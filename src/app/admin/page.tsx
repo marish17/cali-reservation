@@ -84,7 +84,7 @@ export default function AdminBookingsPage() {
             className={[
               "rounded-xl border px-3 py-1.5 text-xs transition",
               filter === value
-                ? "border-accent bg-accent/10 text-accent"
+                ? "border-accent bg-accent/10 text-accentSoft"
                 : "border-line text-slate-300 hover:border-slate-500",
             ].join(" ")}
           >
@@ -144,7 +144,7 @@ export default function AdminBookingsPage() {
             </div>
 
             {row.guardian_name && (
-              <p className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs text-amber-100">
+              <p className="mt-3 rounded-lg border border-accent/45 bg-accent/[0.07] p-3 text-xs text-slate-200">
                 Minore accompagnato da {row.guardian_name}
                 {row.guardian_phone ? ` · ${row.guardian_phone}` : ""}
               </p>

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { addDays, ageAt, formatDayLong, formatDayShort, formatTime, toISODate } from "@/lib/date";
+import { addDays, ageAt, formatDayLong, formatTime, toISODate } from "@/lib/date";
+import Calendar from "@/components/Calendar";
 import type { Availability, PublicSettings } from "@/lib/types";
 
 type Confirmation = {
@@ -98,11 +99,39 @@ export default function BookingFlow() {
 
   useEffect(() => {
     if (selectedDay || days.length === 0) return;
-    setSelectedDay((days.find((d) => d.remaining > 0) ?? days[0]).day);
+    const firstFree = days.find((d) => d.remaining > 0);
+    if (firstFree) setSelectedDay(firstFree.day);
   }, [days, selectedDay]);
 
   const currentDay = days.find((d) => d.day === selectedDay) ?? null;
   const currentSlot = currentDay?.slots.find((s) => s.slot_id === selectedSlot) ?? null;
+
+  const timeSlots = useMemo(() => {
+    if (!currentDay) return [];
+    const map = new Map<
+      string,
+      { key: string; start_time: string; end_time: string; remaining: number; slot_id: string | null }
+    >();
+
+    for (const slot of currentDay.slots) {
+      const key = `${slot.start_time}-${slot.end_time}`;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, {
+          key,
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          remaining: slot.remaining,
+          slot_id: slot.remaining > 0 ? slot.slot_id : null,
+        });
+        continue;
+      }
+      existing.remaining += slot.remaining;
+      if (!existing.slot_id && slot.remaining > 0) existing.slot_id = slot.slot_id;
+    }
+
+    return [...map.values()].sort((a, b) => a.start_time.localeCompare(b.start_time));
+  }, [currentDay]);
 
   // L'eta' che conta e' quella compiuta il giorno della prova.
   const age = currentSlot ? ageAt(form.birth_date, currentSlot.day) : null;
@@ -189,14 +218,7 @@ export default function BookingFlow() {
   return (
     <div className="space-y-6">
       <section className="card">
-        <header className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-lg font-semibold">1. Scegli il giorno</h2>
-          {settings && (
-            <span className="badge">
-              max {settings.max_trials_per_day} prove al giorno
-            </span>
-          )}
-        </header>
+        <h2 className="text-lg font-semibold">1. Scegli il giorno</h2>
 
         {days.length === 0 ? (
           <p className="mt-4 text-sm text-slate-400">
@@ -204,35 +226,17 @@ export default function BookingFlow() {
             {settings?.contact_email ? ` o scrivi a ${settings.contact_email}` : ""}.
           </p>
         ) : (
-          <div className="-mx-1 mt-4 flex snap-x gap-2 overflow-x-auto px-1 pb-2">
-            {days.map((d) => {
-              const isSelected = d.day === selectedDay;
-              const soldOut = d.remaining === 0;
-              return (
-                <button
-                  key={d.day}
-                  type="button"
-                  disabled={soldOut}
-                  onClick={() => {
-                    setSelectedDay(d.day);
-                    setSelectedSlot(null);
-                    setFormError(null);
-                  }}
-                  className={[
-                    "min-w-[104px] shrink-0 snap-start rounded-xl border px-3 py-3 text-left transition",
-                    isSelected
-                      ? "border-accent bg-accent/10"
-                      : "border-line bg-ink/40 hover:border-slate-500",
-                    soldOut ? "cursor-not-allowed opacity-40" : "",
-                  ].join(" ")}
-                >
-                  <span className="block text-sm font-semibold">{formatDayShort(d.day)}</span>
-                  <span className="mt-1 block text-xs text-slate-400">
-                    {soldOut ? "completo" : `${d.remaining} post${d.remaining === 1 ? "o" : "i"}`}
-                  </span>
-                </button>
-              );
-            })}
+          <div className="mt-4">
+            <Calendar
+              days={days.map((d) => ({ day: d.day, remaining: d.remaining }))}
+              selectedDay={selectedDay}
+              horizonDays={settings?.booking_horizon_days ?? 30}
+              onSelect={(day) => {
+                setSelectedDay(day);
+                setSelectedSlot(null);
+                setFormError(null);
+              }}
+            />
           </div>
         )}
       </section>
@@ -243,12 +247,12 @@ export default function BookingFlow() {
           <p className="mt-1 text-sm text-slate-400">{formatDayLong(currentDay.day)}</p>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {currentDay.slots.map((slot) => {
-              const isSelected = slot.slot_id === selectedSlot;
-              const full = slot.remaining === 0;
+            {timeSlots.map((slot) => {
+              const full = slot.remaining === 0 || !slot.slot_id;
+              const isSelected = !full && slot.slot_id === selectedSlot;
               return (
                 <button
-                  key={slot.slot_id}
+                  key={slot.key}
                   type="button"
                   disabled={full}
                   onClick={() => {
@@ -263,14 +267,11 @@ export default function BookingFlow() {
                     full ? "cursor-not-allowed opacity-40" : "",
                   ].join(" ")}
                 >
-                  <span>
-                    <span className="block text-sm font-semibold">
-                      {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-slate-400">{slot.coach_name}</span>
+                  <span className="text-sm font-semibold">
+                    {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
                   </span>
                   <span className="text-xs text-slate-400">
-                    {full ? "completo" : `${slot.remaining} disp.`}
+                    {full ? "completo" : "disponibile"}
                   </span>
                 </button>
               );
@@ -283,8 +284,8 @@ export default function BookingFlow() {
         <section className="card">
           <h2 className="text-lg font-semibold">3. I tuoi dati</h2>
           <p className="mt-1 text-sm text-slate-400">
-            {formatDayLong(currentSlot.day)}, ore {formatTime(currentSlot.start_time)} con{" "}
-            {currentSlot.coach_name}
+            {formatDayLong(currentSlot.day)}, ore {formatTime(currentSlot.start_time)} –{" "}
+            {formatTime(currentSlot.end_time)}
           </p>
 
           <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={submit}>
@@ -363,8 +364,8 @@ export default function BookingFlow() {
 
 
             {needsGuardian && (
-              <div className="sm:col-span-2 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4">
-                <p className="text-sm text-amber-100">
+              <div className="sm:col-span-2 rounded-xl border border-accent/45 bg-accent/[0.07] p-4">
+                <p className="text-sm text-slate-200">
                   Sotto i {settings?.guardian_required_under_age} anni la prova si svolge
                   accompagnati da un genitore o tutore, che deve essere presente in palestra.
                 </p>
@@ -451,7 +452,7 @@ function Confirmed({
 
   return (
     <div className="card border-accent/40">
-      <span className="badge border-accent/50 text-accent">Prenotazione confermata</span>
+      <span className="badge border-accent/60 text-accentSoft">Prenotazione confermata</span>
       <h2 className="mt-4 text-2xl font-semibold">Ci vediamo in palestra!</h2>
       <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
         <div>
@@ -464,10 +465,6 @@ function Confirmed({
             {formatTime(confirmation.start_time)} – {formatTime(confirmation.end_time)}
           </dd>
         </div>
-        <div>
-          <dt className="text-slate-400">Coach</dt>
-          <dd className="font-medium">{confirmation.coach_name}</dd>
-        </div>
         {settings?.contact_phone && (
           <div>
             <dt className="text-slate-400">Contatti</dt>
@@ -477,7 +474,7 @@ function Confirmed({
       </dl>
 
       {confirmation.guardian_required && (
-        <p className="mt-5 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-amber-100">
+        <p className="mt-5 rounded-xl border border-accent/45 bg-accent/[0.07] p-4 text-sm text-slate-200">
           Ricorda: il giorno della prova serve la presenza del genitore o tutore indicato.
         </p>
       )}
@@ -486,7 +483,7 @@ function Confirmed({
         <p className="text-sm text-slate-300">
           Salva questo link: ti serve per disdire la prova se non potessi venire.
         </p>
-        <a className="mt-2 block break-all text-sm text-accent underline" href={cancelUrl}>
+        <a className="mt-2 block break-all text-sm text-accentSoft underline" href={cancelUrl}>
           {cancelUrl}
         </a>
       </div>

@@ -5,10 +5,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#0b0d10",
-        surface: "#14181d",
-        line: "#242b33",
-        accent: "#c8f751",
+        ink: "#0a0a0b",       // nero di fondo
+        surface: "#141416",   // superfici sollevate
+        line: "#2a2a2e",      // bordi
+        accent: "#e01e2b",    // rosso per riempimenti e bordi
+        accentSoft: "#ff5d68", // rosso schiarito, leggibile sul nero
       },
     },
   },

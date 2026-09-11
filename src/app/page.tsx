@@ -27,7 +27,7 @@ export default async function HomePage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:py-16">
       <header className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accentSoft">
           {settings?.gym_name ?? "Calisthenics"}
         </p>
         <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl">

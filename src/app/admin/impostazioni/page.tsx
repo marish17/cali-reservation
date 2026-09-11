@@ -157,7 +157,7 @@ export default function AdminSettingsPage() {
         <button className="btn-primary" type="submit" disabled={status === "saving"}>
           {status === "saving" ? "Salvataggio…" : "Salva"}
         </button>
-        {status === "saved" && <span className="text-sm text-accent">Impostazioni salvate.</span>}
+        {status === "saved" && <span className="text-sm text-accentSoft">Impostazioni salvate.</span>}
         {status === "error" && (
           <span className="text-sm text-red-200">Errore durante il salvataggio.</span>
         )}
