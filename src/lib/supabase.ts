@@ -1,16 +1,16 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
+import { readSupabaseEnv } from "@/lib/env";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const env = readSupabaseEnv();
 
-export const isSupabaseConfigured = Boolean(url && anonKey);
+export const isSupabaseConfigured = env !== null;
 
-// In assenza di env vars l'app deve comunque compilare e mostrare un
-// messaggio di setup invece di esplodere al primo import.
+// Senza configurazione valida l'app deve comunque compilare e mostrare
+// la schermata di setup, invece di esplodere al primo import.
 export const supabase = createClient(
-  url ?? "https://placeholder.supabase.co",
-  anonKey ?? "placeholder-anon-key",
+  env?.url ?? "https://placeholder.supabase.co",
+  env?.anonKey ?? "placeholder-anon-key",
   { auth: { persistSession: true, autoRefreshToken: true } }
 );

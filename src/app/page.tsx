@@ -1,6 +1,7 @@
 import BookingFlow from "@/components/BookingFlow";
 import SetupNotice from "@/components/SetupNotice";
 import { createServerClient } from "@/lib/supabase-server";
+import { readSupabaseEnv } from "@/lib/env";
 import type { PublicSettings } from "@/lib/types";
 
 export const revalidate = 60;
@@ -8,14 +9,19 @@ export const revalidate = 60;
 async function loadSettings(): Promise<PublicSettings | null> {
   const client = createServerClient();
   if (!client) return null;
-  const { data } = await client.rpc("get_public_settings");
-  return ((data as PublicSettings[]) ?? [])[0] ?? null;
+
+  // Un database irraggiungibile non deve far fallire la pagina: si
+  // ricade sui testi predefiniti e il resto continua a funzionare.
+  try {
+    const { data } = await client.rpc("get_public_settings");
+    return ((data as PublicSettings[]) ?? [])[0] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export default async function HomePage() {
-  const configured = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  const configured = readSupabaseEnv() !== null;
   const settings = configured ? await loadSettings() : null;
 
   return (

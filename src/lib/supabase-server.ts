@@ -1,15 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
+import { readSupabaseEnv } from "@/lib/env";
 
 /**
  * Client anonimo per il rendering lato server (solo dati pubblici).
  * Nessuna sessione da persistere: ogni richiesta e' indipendente.
  */
 export function createServerClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) return null;
+  const env = readSupabaseEnv();
+  if (!env) return null;
 
-  return createClient(url, anonKey, {
+  return createClient(env.url, env.anonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
