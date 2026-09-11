@@ -23,6 +23,8 @@ const MESSAGES: Record<string, string> = {
   ALREADY_BOOKED: "Risulta già una prenotazione con questa email in questa data.",
   NOT_FOUND: "Prenotazione non trovata.",
   NOT_AUTHENTICATED: "Accedi per richiedere una prova.",
+  PRIVACY_REQUIRED:
+    "Per proseguire devi dichiarare di aver letto l'informativa privacy.",
   NOT_ALLOWED: "Operazione riservata ai coach.",
   USER_NOT_FOUND:
     "Nessun account con questa email. Chiedi alla persona di accedere una volta dal sito, poi riprova.",

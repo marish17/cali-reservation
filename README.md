@@ -8,14 +8,32 @@ approva, e l'esito arriva per email. Coach, orari e approvazioni si
 gestiscono da un pannello riservato.
 
 - **Stack**: Next.js 14 (App Router, TypeScript, Tailwind) + Supabase (Postgres, Auth, RLS)
-- **Pagine pubbliche**: `/` prenotazione, `/le-mie-prenotazioni` stato delle proprie richieste
+- **Pagine pubbliche**: `/` prenotazione, `/le-mie-prenotazioni` stato delle proprie richieste, `/privacy` informativa
 - **Area riservata**: `/admin` (approvazioni, coach e orari, chiusure, impostazioni, accessi)
+
+## Privacy
+
+Il modulo raccoglie dati personali, inclusi quelli di minori e dei loro
+genitori, quindi chiede un consenso esplicito con collegamento all'informativa,
+e registra il momento in cui è stato dato. Il consenso è verificato dal
+database, non solo dalla casella nel browser.
+
+Il testo dell'informativa si scrive da `/admin/impostazioni` e compare su
+`/privacy`. La migrazione ne installa una **bozza**: i punti fra parentesi
+quadre (ragione sociale, sede, contatti, tempi di conservazione) vanno
+compilati, e il pannello li elenca finché restano aperti.
+
+La bozza copre i punti richiesti dall'art. 13 GDPR, ma **non è un parere
+legale**: prima di aprire al pubblico fatela leggere a chi segue la privacy
+della vostra associazione, soprattutto per la parte sui minori e sui tempi di
+conservazione.
 
 ## Il giro completo
 
 1. Il visitatore sceglie giorno e orario dal calendario
 2. Per proseguire accede con un link via email (niente password)
-3. Compila nome, data di nascita e telefono — la volta dopo è già precompilato
+3. Compila nome, data di nascita e telefono, e accetta l'informativa privacy —
+   la volta dopo i dati sono già precompilati, il consenso no: si ridà ogni volta
 4. La richiesta nasce **in attesa** e tiene occupato il posto
 5. Il coach riceve una email e da `/admin` conferma o rifiuta, con un messaggio facoltativo
 6. L'utente riceve l'esito via email e lo rivede in `/le-mie-prenotazioni`
@@ -69,6 +87,11 @@ incolla per intero, **in ordine**:
 3. `supabase/migrations/0003_accounts_and_approval.sql` — account, richieste in attesa, approvazione
 4. `supabase/migrations/0004_gym_name.sql` — nome della palestra
 5. `supabase/migrations/0005_coach_access.sql` — gestione degli accessi dal pannello
+6. `supabase/migrations/0006_privacy.sql` — informativa privacy e consenso
+
+Per sapere quali risultano già applicate:
+`supabase/checks/verifica_migrazioni.sql` risponde con un elenco leggibile e
+non modifica nulla.
 
 Ogni file va eseguito in una query separata.
 
@@ -233,6 +256,8 @@ progetto di produzione), ognuna su un database pulito:
   dalle richieste in attesa, approvazione e rifiuto, chi può decidere, annullamento
 - `supabase/tests/coach_access_test.sql` — chi può concedere e revocare l'accesso
   al pannello, email senza account, revoca a se stessi
+- `supabase/tests/privacy_test.sql` — richiesta rifiutata senza consenso, momento
+  del consenso registrato, informativa leggibile da chiunque ma modificabile solo dai coach
 - `supabase/tests/security_test.sql` — chi può leggere e scrivere cosa: verifica
   che un visitatore non veda nessun dato personale, che un utente registrato veda
   soltanto i propri, e che non possa scrivere direttamente nelle tabelle

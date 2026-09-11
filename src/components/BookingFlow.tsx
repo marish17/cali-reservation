@@ -25,6 +25,7 @@ type Form = {
   guardian_name: string;
   guardian_phone: string;
   notes: string;
+  privacy_accepted: boolean;
 };
 
 const EMPTY_FORM: Form = {
@@ -34,6 +35,7 @@ const EMPTY_FORM: Form = {
   guardian_name: "",
   guardian_phone: "",
   notes: "",
+  privacy_accepted: false,
 };
 
 // La scelta fatta prima di accedere va ritrovata al ritorno dal link
@@ -228,6 +230,7 @@ export default function BookingFlow() {
         guardian_name: form.guardian_name || null,
         guardian_phone: form.guardian_phone || null,
         notes: form.notes || null,
+        privacy_accepted: form.privacy_accepted,
       }),
     }).catch(() => null);
 
@@ -519,11 +522,43 @@ export default function BookingFlow() {
                 </p>
               )}
 
+              <div className="sm:col-span-2 rounded-xl border border-line bg-ink/40 p-4">
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    required
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
+                    checked={form.privacy_accepted}
+                    onChange={(e) =>
+                      setForm({ ...form, privacy_accepted: e.target.checked })
+                    }
+                  />
+                  <span className="text-sm text-slate-300">
+                    Ho letto l&apos;
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-accentSoft underline"
+                    >
+                      informativa privacy
+                    </a>{" "}
+                    e acconsento al trattamento dei dati per gestire questa richiesta.
+                    {needsGuardian && (
+                      <span className="mt-1.5 block text-xs text-slate-400">
+                        Trattandosi di un minore, il consenso è prestato dal genitore o da chi
+                        ne fa le veci.
+                      </span>
+                    )}
+                  </span>
+                </label>
+              </div>
+
               <div className="sm:col-span-2">
                 <button
                   type="submit"
                   className="btn-primary w-full sm:w-auto"
-                  disabled={submitting || ageTooLow}
+                  disabled={submitting || ageTooLow || !form.privacy_accepted}
                 >
                   {submitting ? "Invio in corso…" : "Invia la richiesta"}
                 </button>

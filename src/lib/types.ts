@@ -8,6 +8,7 @@ export type PublicSettings = {
   guardian_required_under_age: number;
   contact_email: string | null;
   contact_phone: string | null;
+  privacy_text: string | null;
 };
 
 export type Availability = {
@@ -73,4 +74,5 @@ export type Settings = {
   guardian_required_under_age: number;
   contact_email: string | null;
   contact_phone: string | null;
+  privacy_text: string | null;
 };

@@ -21,12 +21,22 @@ export default function AdminSettingsPage() {
     setStatus("saving");
     const { error } = await supabase
       .from("settings")
-      .update({ ...settings, updated_at: new Date().toISOString() })
+      .update({
+        ...settings,
+        privacy_updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", true);
     setStatus(error ? "error" : "saved");
   }
 
   if (!settings) return <p className="card text-sm text-slate-400">Caricamento…</p>;
+
+  // I segnaposto fra parentesi quadre sono i punti che solo tu puoi
+  // compilare: meglio dirlo qui che scoprirli online.
+  const placeholdersLeft = [...(settings.privacy_text ?? "").matchAll(/\[([^\]]+)\]/g)]
+    .map((match) => match[0])
+    .filter((value, index, all) => all.indexOf(value) === index);
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     setSettings({ ...settings, [key]: value });
@@ -151,6 +161,27 @@ export default function AdminSettingsPage() {
             onChange={(e) => set("contact_phone", e.target.value || null)}
           />
         </div>
+      </div>
+
+      <div className="border-t border-line pt-5">
+        <h2 className="text-base font-semibold">Informativa privacy</h2>
+        <p className="mt-1 text-sm text-slate-400">
+          Mostrata su <code className="rounded bg-black/40 px-1.5 py-0.5">/privacy</code> e
+          collegata alla casella di consenso nel modulo. Una riga che inizia con{" "}
+          <code className="rounded bg-black/40 px-1.5 py-0.5">##</code> diventa un titolo.
+        </p>
+
+        {placeholdersLeft.length > 0 && (
+          <p className="mt-3 rounded-xl border border-accent/45 bg-accent/[0.07] p-3 text-sm text-slate-200">
+            Da compilare prima di pubblicare: {placeholdersLeft.join(", ")}
+          </p>
+        )}
+
+        <textarea
+          className="field mt-3 min-h-[320px] resize-y font-mono text-xs leading-relaxed"
+          value={settings.privacy_text ?? ""}
+          onChange={(e) => set("privacy_text", e.target.value)}
+        />
       </div>
 
       <div className="flex items-center gap-3 border-t border-line pt-5">

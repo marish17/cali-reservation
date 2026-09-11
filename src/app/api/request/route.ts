@@ -15,6 +15,7 @@ type Payload = {
   guardian_name?: string | null;
   guardian_phone?: string | null;
   notes?: string | null;
+  privacy_accepted?: boolean;
 };
 
 type RequestTrialResult = {
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
     p_full_name: payload.full_name,
     p_birth_date: payload.birth_date,
     p_phone: payload.phone,
+    p_privacy_accepted: payload.privacy_accepted === true,
     p_guardian_name: payload.guardian_name || null,
     p_guardian_phone: payload.guardian_phone || null,
     p_notes: payload.notes || null,

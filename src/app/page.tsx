@@ -41,12 +41,13 @@ export default async function HomePage() {
 
       {configured ? <BookingFlow /> : <SetupNotice />}
 
-      {(settings?.contact_email || settings?.contact_phone) && (
-        <footer className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-6 text-xs text-slate-500">
-          {settings?.contact_email && <span>{settings.contact_email}</span>}
-          {settings?.contact_phone && <span>{settings.contact_phone}</span>}
-        </footer>
-      )}
+      <footer className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-6 text-xs text-slate-500">
+        {settings?.contact_email && <span>{settings.contact_email}</span>}
+        {settings?.contact_phone && <span>{settings.contact_phone}</span>}
+        <a className="ml-auto hover:text-slate-300" href="/privacy">
+          Informativa privacy
+        </a>
+      </footer>
     </main>
   );
 }
