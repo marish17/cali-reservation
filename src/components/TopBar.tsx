@@ -16,7 +16,7 @@ export default function TopBar({ gymName }: { gymName: string }) {
   return (
     <div className="mb-8 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line pb-3">
       <Link href="/" className="flex items-center gap-2.5">
-        <Logo size={32} />
+        <Logo size={38} />
         <span className="text-xs font-semibold uppercase tracking-[0.2em] text-accentSoft">
           {gymName}
         </span>

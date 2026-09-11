@@ -74,7 +74,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8">
       <header className="mb-6 flex flex-wrap items-center gap-3 border-b border-line pb-4">
-        <Logo size={28} />
+        <Logo size={32} />
         <h1 className="text-lg font-bold">Area coach</h1>
         <span className="badge">{email}</span>
         <button
