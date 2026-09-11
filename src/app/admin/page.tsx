@@ -40,6 +40,7 @@ export default function AdminBookingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [emailWarning, setEmailWarning] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,6 +76,7 @@ export default function AdminBookingsPage() {
 
     setBusyId(row.id);
     setError(null);
+    setEmailWarning(null);
 
     const response = await fetch("/api/decide", {
       method: "POST",
@@ -91,6 +93,18 @@ export default function AdminBookingsPage() {
       const body = (await response?.json().catch(() => null)) as { error?: string } | null;
       setError(body?.error ?? "Operazione non riuscita.");
       return;
+    }
+
+    const body = (await response.json().catch(() => null)) as
+      | { email?: { ok: boolean; reason?: string } }
+      | null;
+
+    if (body?.email && !body.email.ok) {
+      setEmailWarning(
+        `Decisione registrata, ma l'email a ${row.full_name} non è partita` +
+          `${body.email.reason ? ` (${body.email.reason})` : ""}. ` +
+          `Avvisalo tu: ${row.email}`
+      );
     }
 
     setNotes((current) => ({ ...current, [row.id]: "" }));
@@ -118,6 +132,19 @@ export default function AdminBookingsPage() {
       </div>
 
       {error && <p className="card border-red-500/40 text-sm text-red-200">{error}</p>}
+
+      {emailWarning && (
+        <div className="card border-accent/45 bg-accent/[0.07]">
+          <p className="text-sm text-slate-200">{emailWarning}</p>
+          <button
+            className="btn-ghost mt-3 !px-3 !py-1.5 text-xs"
+            onClick={() => setEmailWarning(null)}
+          >
+            Ho capito
+          </button>
+        </div>
+      )}
+
       {loading && <p className="card text-sm text-slate-400">Caricamento…</p>}
 
       {!loading && rows.length === 0 && (

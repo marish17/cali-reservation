@@ -55,7 +55,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Operazione non riuscita." }, { status: 400 });
   }
 
-  await notifyDecision({
+  // La decisione e' presa e registrata comunque: se l'avviso non parte,
+  // il coach deve saperlo per avvisare la persona a mano.
+  const email = await notifyDecision({
     to: decision.email,
     full_name: decision.full_name,
     day: decision.day,
@@ -65,5 +67,5 @@ export async function POST(request: Request) {
     note: decision.note,
   });
 
-  return NextResponse.json({ decision });
+  return NextResponse.json({ decision, email });
 }

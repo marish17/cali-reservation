@@ -24,6 +24,18 @@ export type DecisionNotification = {
   note: string | null;
 };
 
+export type SendResult =
+  | { ok: true }
+  | { ok: false; reason: string; detail?: string };
+
+/** Destinatari degli avvisi: uno o piu' indirizzi separati da virgola. */
+export function notifyRecipients(): string[] {
+  return (process.env.NOTIFY_EMAIL ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -49,9 +61,15 @@ function shell(kicker: string, title: string, inner: string): string {
 </div>`;
 }
 
-async function send(payload: Record<string, unknown>): Promise<void> {
+/**
+ * Un invio fallito non deve mai far fallire l'operazione in corso:
+ * l'esito torna a chi chiama, che decide se ignorarlo o mostrarlo.
+ */
+async function send(payload: Record<string, unknown>): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return;
+  if (!apiKey) {
+    return { ok: false, reason: "RESEND_API_KEY non è impostata." };
+  }
 
   try {
     const response = await fetch("https://api.resend.com/emails", {
@@ -62,21 +80,25 @@ async function send(payload: Record<string, unknown>): Promise<void> {
         ...payload,
       }),
     });
+
     if (!response.ok) {
-      console.error("Email non inviata:", response.status, await response.text());
+      const detail = await response.text();
+      console.error("Email non inviata:", response.status, detail);
+      return { ok: false, reason: `Il servizio email ha risposto ${response.status}.`, detail };
     }
+    return { ok: true };
   } catch (error) {
     console.error("Email non inviata:", error);
+    return { ok: false, reason: "Non è stato possibile contattare il servizio email.", detail: String(error) };
   }
 }
 
-/** Avvisa il coach che c'e' una richiesta da approvare. */
-export async function notifyNewRequest(b: RequestNotification): Promise<void> {
-  const to = (process.env.NOTIFY_EMAIL ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-  if (to.length === 0) return;
+/** Avvisa i coach che c'e' una richiesta da approvare. */
+export async function notifyNewRequest(b: RequestNotification): Promise<SendResult> {
+  const to = notifyRecipients();
+  if (to.length === 0) {
+    return { ok: false, reason: "NOTIFY_EMAIL non è impostata: nessun destinatario." };
+  }
 
   const rows = [
     row("Partecipante", b.full_name),
@@ -104,7 +126,7 @@ export async function notifyNewRequest(b: RequestNotification): Promise<void> {
       </a>
     </p>`;
 
-  await send({
+  return send({
     to,
     reply_to: b.email,
     subject: `Richiesta di prova: ${b.full_name} — ${formatDayLong(b.day)} ${formatTime(b.start_time)}`,
@@ -124,7 +146,7 @@ export async function notifyNewRequest(b: RequestNotification): Promise<void> {
 }
 
 /** Comunica all'utente l'esito della sua richiesta. */
-export async function notifyDecision(d: DecisionNotification): Promise<void> {
+export async function notifyDecision(d: DecisionNotification): Promise<SendResult> {
   const when = `${formatDayLong(d.day)}, ${formatTime(d.start_time)}–${formatTime(d.end_time)}`;
 
   const inner = `<table style="border-collapse:collapse;width:100%">
@@ -145,7 +167,7 @@ export async function notifyDecision(d: DecisionNotification): Promise<void> {
       }
     </p>`;
 
-  await send({
+  return send({
     to: [d.to],
     subject: d.approved
       ? `Prova confermata — ${formatDayLong(d.day)} ${formatTime(d.start_time)}`

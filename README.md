@@ -128,7 +128,12 @@ NOTIFY_EMAIL=coach@tuapalestra.it
 NOTIFY_FROM=Prenotazioni <onboarding@resend.dev>
 ```
 
-`NOTIFY_EMAIL` accetta più indirizzi separati da virgola.
+`NOTIFY_EMAIL` accetta più indirizzi separati da virgola: per avvisare tutti i
+coach basta elencarli.
+
+```
+NOTIFY_EMAIL=marco@tuapalestra.it,luca@tuapalestra.it,sara@tuapalestra.it
+```
 
 `NOTIFY_FROM` è la trappola più comune: Resend spedisce **solo** da un dominio
 che hai verificato tu. Mettere lì il tuo indirizzo personale (Gmail, iCloud,
@@ -136,9 +141,14 @@ Outlook…) fa fallire ogni invio, silenziosamente per l'utente e con un errore
 nei log. Finché non hai verificato un dominio, lascia esattamente
 `onboarding@resend.dev`.
 
-Sempre con `onboarding@resend.dev`, Resend consente di spedire solo verso
-l'indirizzo con cui ti sei registrato: per le prove va bene, per il sito
-pubblico serve verificare un dominio.
+Sempre con `onboarding@resend.dev`, Resend consegna **solo** all'indirizzo con
+cui ti sei registrato. È la ragione per cui, in questa configurazione, l'avviso
+al coach arriva e quello di esito alla persona che ha prenotato no: il primo va
+al tuo indirizzo, il secondo a un indirizzo qualunque. Per far partire anche
+quello serve verificare un dominio su Resend e usarlo in `NOTIFY_FROM`.
+
+Finché non è verificato, il pannello avvisa il coach quando un'email di esito
+non è partita, indicando l'indirizzo della persona da contattare a mano.
 
 Senza queste variabili l'app funziona identica, solo senza email. Se Resend
 fosse irraggiungibile la prenotazione viene comunque registrata: l'errore
