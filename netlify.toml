@@ -1,0 +1,16 @@
+# Netlify riconosce Next.js da solo, ma tenere la configurazione nel
+# repository evita che un'impostazione cambiata a mano nel pannello si
+# perda o diverga da quello che gira in locale.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Il runtime Next.js serve le route server (/api/request, /api/decide)
+# e la rigenerazione della home. Senza, il sito verrebbe trattato come
+# statico e le prenotazioni non funzionerebbero.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

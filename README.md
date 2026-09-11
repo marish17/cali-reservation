@@ -165,11 +165,32 @@ npm install
 npm run dev      # http://localhost:3000
 ```
 
-## Deploy
+## Deploy su Netlify
 
-Importa il repository su [Vercel](https://vercel.com) e riporta nelle
-*Environment Variables* le stesse voci di `.env.local` (le due `NEXT_PUBLIC_…`
-sono obbligatorie, le tre di Resend solo se vuoi le email). Poi pubblica.
+Il repository contiene già `netlify.toml` e `.nvmrc`: Netlify usa il runtime
+Next.js, necessario perché le route server (`/api/request`, `/api/decide`)
+funzionino. Un deploy statico non basta.
+
+1. Netlify → **Add new site → Import an existing project** → scegli il repository
+2. Build command e publish directory arrivano da `netlify.toml`: non toccarli
+3. **Site configuration → Environment variables**: aggiungi le stesse voci di
+   `.env.local`. Le due `NEXT_PUBLIC_…` sono obbligatorie; le tre dell'email
+   solo se vuoi le notifiche
+4. Fai il deploy e segnati l'indirizzo assegnato (es. `nome-sito.netlify.app`)
+
+### Dopo il primo deploy, obbligatorio
+
+Supabase → **Authentication → URL Configuration**:
+
+- **Site URL**: l'indirizzo del sito pubblicato
+- **Redirect URLs**: aggiungi `https://nome-sito.netlify.app/**`, tenendo anche
+  `http://localhost:3000/**` per lo sviluppo
+
+Senza questo passaggio il link di accesso inviato per email non riporta al sito
+e **nessuno riesce a prenotare**. È l'errore più facile da fare pubblicando.
+
+Le variabili d'ambiente si leggono al momento della build: dopo averle
+cambiate serve un nuovo deploy, non basta salvarle.
 
 ## Test delle regole di prenotazione
 
@@ -182,6 +203,18 @@ progetto di produzione), ognuna su un database pulito:
   calcolo dell'età al giorno della prova, date di nascita non valide
 - `supabase/tests/approval_rules_test.sql` — account obbligatorio, posto tenuto
   dalle richieste in attesa, approvazione e rifiuto, chi può decidere, annullamento
+- `supabase/tests/security_test.sql` — chi può leggere e scrivere cosa: verifica
+  che un visitatore non veda nessun dato personale, che un utente registrato veda
+  soltanto i propri, e che non possa scrivere direttamente nelle tabelle
+
+L'ultimo va eseguito dopo aver concesso ai ruoli di prova gli stessi privilegi
+che Supabase assegna di default, altrimenti passerebbe per il motivo sbagliato:
+
+```sql
+grant usage on schema public, auth to anon, authenticated;
+grant all on all tables in schema public to anon, authenticated;
+grant select on auth.users to anon, authenticated;
+```
 
 ```bash
 psql "$DATABASE_URL" -f supabase/migrations/0001_init.sql
