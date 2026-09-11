@@ -22,6 +22,10 @@ const MESSAGES: Record<string, string> = {
   SLOT_FULL: "Questo orario è appena stato occupato, scegline un altro.",
   ALREADY_BOOKED: "Risulta già una prenotazione con questa email in questa data.",
   NOT_FOUND: "Prenotazione non trovata.",
+  NOT_AUTHENTICATED: "Accedi per richiedere una prova.",
+  NOT_ALLOWED: "Operazione riservata ai coach.",
+  INVALID_STATUS: "Stato non valido.",
+  ALREADY_CANCELLED: "La richiesta è stata annullata dall'utente.",
 };
 
 type SupabaseError = { message?: string; hint?: string | null } | null;

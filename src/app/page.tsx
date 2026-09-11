@@ -1,4 +1,5 @@
 import BookingFlow from "@/components/BookingFlow";
+import SessionBar from "@/components/SessionBar";
 import SetupNotice from "@/components/SetupNotice";
 import { createServerClient } from "@/lib/supabase-server";
 import { readSupabaseEnv } from "@/lib/env";
@@ -39,11 +40,16 @@ export default async function HomePage() {
         </p>
       </header>
 
+      {configured && <SessionBar />}
+
       {configured ? <BookingFlow /> : <SetupNotice />}
 
       <footer className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-6 text-xs text-slate-500">
         {settings?.contact_email && <span>{settings.contact_email}</span>}
         {settings?.contact_phone && <span>{settings.contact_phone}</span>}
+        <a className="hover:text-slate-300" href="/le-mie-prenotazioni">
+          Le mie richieste
+        </a>
         <a className="ml-auto hover:text-slate-300" href="/admin">
           Area coach
         </a>

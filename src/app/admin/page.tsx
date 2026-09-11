@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useSession } from "@/lib/useSession";
+import StatusBadge from "@/components/StatusBadge";
 import { ageAt, formatDayLong, formatTime, toISODate } from "@/lib/date";
 
 type Row = {
@@ -16,18 +18,28 @@ type Row = {
   email: string;
   phone: string;
   notes: string | null;
-  status: "confirmed" | "cancelled";
+  status: string;
+  decision_note: string | null;
   created_at: string;
   coaches: { name: string } | null;
 };
 
-type Filter = "upcoming" | "past" | "all";
+type Filter = "pending" | "upcoming" | "all";
+
+const FILTERS: [Filter, string][] = [
+  ["pending", "Da approvare"],
+  ["upcoming", "Confermate in arrivo"],
+  ["all", "Tutte"],
+];
 
 export default function AdminBookingsPage() {
+  const { session } = useSession();
   const [rows, setRows] = useState<Row[]>([]);
-  const [filter, setFilter] = useState<Filter>("upcoming");
+  const [filter, setFilter] = useState<Filter>("pending");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -37,14 +49,14 @@ export default function AdminBookingsPage() {
     let query = supabase
       .from("bookings")
       .select(
-        "id, day, start_time, end_time, full_name, birth_date, guardian_name, guardian_phone, email, phone, notes, status, created_at, coaches(name)"
+        "id, day, start_time, end_time, full_name, birth_date, guardian_name, guardian_phone, email, phone, notes, status, decision_note, created_at, coaches(name)"
       )
-      .order("day", { ascending: filter !== "past" })
+      .order("day", { ascending: true })
       .order("start_time", { ascending: true })
       .limit(300);
 
-    if (filter === "upcoming") query = query.gte("day", today);
-    if (filter === "past") query = query.lt("day", today);
+    if (filter === "pending") query = query.eq("status", "pending").gte("day", today);
+    if (filter === "upcoming") query = query.eq("status", "approved").gte("day", today);
 
     const { data, error } = await query;
     if (error) setError("Errore nel caricamento delle prenotazioni.");
@@ -56,28 +68,39 @@ export default function AdminBookingsPage() {
     void load();
   }, [load]);
 
-  async function cancel(id: string) {
-    if (!confirm("Annullare questa prenotazione? Il posto tornerà disponibile.")) return;
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) setError("Non è stato possibile annullare la prenotazione.");
-    else void load();
-  }
+  async function decide(row: Row, status: "approved" | "rejected") {
+    if (!session) return;
+    const label = status === "approved" ? "Confermare" : "Rifiutare";
+    if (!confirm(`${label} la prova di ${row.full_name}? Gli arriverà una email.`)) return;
 
-  const confirmed = rows.filter((r) => r.status === "confirmed");
+    setBusyId(row.id);
+    setError(null);
+
+    const response = await fetch("/api/decide", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ booking_id: row.id, status, note: notes[row.id] ?? null }),
+    }).catch(() => null);
+
+    setBusyId(null);
+
+    if (!response || !response.ok) {
+      const body = (await response?.json().catch(() => null)) as { error?: string } | null;
+      setError(body?.error ?? "Operazione non riuscita.");
+      return;
+    }
+
+    setNotes((current) => ({ ...current, [row.id]: "" }));
+    void load();
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        {(
-          [
-            ["upcoming", "In arrivo"],
-            ["past", "Passate"],
-            ["all", "Tutte"],
-          ] as const
-        ).map(([value, label]) => (
+        {FILTERS.map(([value, label]) => (
           <button
             key={value}
             onClick={() => setFilter(value)}
@@ -91,24 +114,25 @@ export default function AdminBookingsPage() {
             {label}
           </button>
         ))}
-        <span className="badge ml-auto">{confirmed.length} confermate</span>
+        <span className="badge ml-auto">{rows.length}</span>
       </div>
 
       {error && <p className="card border-red-500/40 text-sm text-red-200">{error}</p>}
       {loading && <p className="card text-sm text-slate-400">Caricamento…</p>}
 
       {!loading && rows.length === 0 && (
-        <p className="card text-sm text-slate-400">Nessuna prenotazione in questo periodo.</p>
+        <p className="card text-sm text-slate-400">
+          {filter === "pending"
+            ? "Nessuna richiesta in attesa. Tutto smaltito."
+            : "Nessuna prenotazione in questo elenco."}
+        </p>
       )}
 
       <div className="space-y-3">
         {rows.map((row) => (
           <article
             key={row.id}
-            className={[
-              "card",
-              row.status === "cancelled" ? "opacity-50" : "",
-            ].join(" ")}
+            className={["card", row.status === "cancelled" ? "opacity-50" : ""].join(" ")}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -125,13 +149,7 @@ export default function AdminBookingsPage() {
                   {row.coaches ? ` · ${row.coaches.name}` : ""}
                 </p>
               </div>
-              {row.status === "confirmed" ? (
-                <button className="btn-ghost !px-3 !py-1.5 text-xs" onClick={() => void cancel(row.id)}>
-                  Annulla
-                </button>
-              ) : (
-                <span className="badge">annullata</span>
-              )}
+              <StatusBadge status={row.status} />
             </div>
 
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-400">
@@ -154,6 +172,43 @@ export default function AdminBookingsPage() {
               <p className="mt-3 rounded-lg border border-line bg-ink/50 p-3 text-xs text-slate-300">
                 {row.notes}
               </p>
+            )}
+
+            {row.decision_note && row.status !== "pending" && (
+              <p className="mt-3 text-xs text-slate-500">
+                Messaggio inviato: {row.decision_note}
+              </p>
+            )}
+
+            {row.status === "pending" && (
+              <div className="mt-4 border-t border-line pt-4">
+                <label className="label" htmlFor={`note-${row.id}`}>
+                  Messaggio per la persona (facoltativo)
+                </label>
+                <input
+                  id={`note-${row.id}`}
+                  className="field"
+                  placeholder="Es. Ci vediamo alle 18, porta scarpe da ginnastica"
+                  value={notes[row.id] ?? ""}
+                  onChange={(e) => setNotes({ ...notes, [row.id]: e.target.value })}
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    className="btn-primary !px-4 !py-2 text-xs"
+                    disabled={busyId === row.id}
+                    onClick={() => void decide(row, "approved")}
+                  >
+                    {busyId === row.id ? "Attendi…" : "Conferma la prova"}
+                  </button>
+                  <button
+                    className="btn-ghost !px-4 !py-2 text-xs"
+                    disabled={busyId === row.id}
+                    onClick={() => void decide(row, "rejected")}
+                  >
+                    Rifiuta
+                  </button>
+                </div>
+              </div>
             )}
           </article>
         ))}

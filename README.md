@@ -2,12 +2,26 @@
 
 Web app pubblica per prenotare la lezione di prova: l'utente sceglie giorno e
 orario tra quelli in cui il coach è effettivamente presente, con un tetto
-massimo di prove per giornata. Nessun account richiesto per chi prenota;
-coach e orari si gestiscono da un pannello riservato.
+massimo di prove per giornata. Chi prenota accede con un link via email e
+invia una **richiesta**: la prova è confermata solo quando il coach la
+approva, e l'esito arriva per email. Coach, orari e approvazioni si
+gestiscono da un pannello riservato.
 
 - **Stack**: Next.js 14 (App Router, TypeScript, Tailwind) + Supabase (Postgres, Auth, RLS)
-- **Pagine pubbliche**: `/` prenotazione, `/disdetta?token=…` disdetta self-service
-- **Area riservata**: `/admin` (prenotazioni, coach e orari, chiusure, impostazioni)
+- **Pagine pubbliche**: `/` prenotazione, `/le-mie-prenotazioni` stato delle proprie richieste
+- **Area riservata**: `/admin` (approvazioni, coach e orari, chiusure, impostazioni)
+
+## Il giro completo
+
+1. Il visitatore sceglie giorno e orario dal calendario
+2. Per proseguire accede con un link via email (niente password)
+3. Compila nome, data di nascita e telefono — la volta dopo è già precompilato
+4. La richiesta nasce **in attesa** e tiene occupato il posto
+5. Il coach riceve una email e da `/admin` conferma o rifiuta, con un messaggio facoltativo
+6. L'utente riceve l'esito via email e lo rivede in `/le-mie-prenotazioni`
+
+Un rifiuto libera subito il posto. L'utente può annullare da solo una richiesta
+finché la prova non è passata.
 
 ## Come funzionano i limiti
 
@@ -52,8 +66,23 @@ incolla per intero, **in ordine**:
 
 1. `supabase/migrations/0001_init.sql` — tabelle, policy di sicurezza, logica di prenotazione
 2. `supabase/migrations/0002_age_and_guardian.sql` — data di nascita, età minima, accompagnatore
+3. `supabase/migrations/0003_accounts_and_approval.sql` — account, richieste in attesa, approvazione
 
 Ogni file va eseguito in una query separata.
+
+**Attenzione**: la terza migrazione cancella le prenotazioni esistenti. Erano
+state fatte senza account e non c'è modo di ricondurle a un utente.
+
+### 1b. Accesso con link via email
+
+Supabase → **Authentication → URL Configuration**:
+
+- **Site URL**: `http://localhost:3000` in sviluppo, l'indirizzo del sito una
+  volta pubblicato
+- **Redirect URLs**: aggiungi entrambi, `http://localhost:3000/**` e
+  `https://tuo-sito.vercel.app/**`
+
+Senza questi due valori il link ricevuto per email non riporta all'app.
 
 Facoltativo: `supabase/seed.sql` inserisce un coach e alcune fasce di esempio.
 
@@ -83,10 +112,11 @@ La chiave `anon` è pensata per stare nel browser: le policy RLS e le funzioni
 `security definer` sono ciò che protegge i dati. **Non** inserire mai qui la
 chiave `service_role`.
 
-### 3b. Notifiche via email (facoltativo)
+### 3b. Email (facoltativo)
 
-A ogni nuova prenotazione parte un'email al coach con nome, età, giorno, orario
-e contatti (e i dati dell'accompagnatore, se minore). Per attivarla:
+Due email automatiche: una al coach a ogni nuova richiesta (nome, età, giorno,
+orario, contatti, accompagnatore se minore) e una all'utente quando il coach
+decide, col messaggio che il coach ha eventualmente scritto. Per attivarle:
 
 1. Registrati su [resend.com](https://resend.com) (piano gratuito: 100 email al giorno)
 2. **API Keys** → crea una chiave
@@ -98,9 +128,17 @@ NOTIFY_EMAIL=coach@tuapalestra.it
 NOTIFY_FROM=Prenotazioni <onboarding@resend.dev>
 ```
 
-`NOTIFY_EMAIL` accetta più indirizzi separati da virgola. `NOTIFY_FROM` può
-restare `onboarding@resend.dev` per iniziare; per spedire dal tuo dominio va
-prima verificato su Resend.
+`NOTIFY_EMAIL` accetta più indirizzi separati da virgola.
+
+`NOTIFY_FROM` è la trappola più comune: Resend spedisce **solo** da un dominio
+che hai verificato tu. Mettere lì il tuo indirizzo personale (Gmail, iCloud,
+Outlook…) fa fallire ogni invio, silenziosamente per l'utente e con un errore
+nei log. Finché non hai verificato un dominio, lascia esattamente
+`onboarding@resend.dev`.
+
+Sempre con `onboarding@resend.dev`, Resend consente di spedire solo verso
+l'indirizzo con cui ti sei registrato: per le prove va bene, per il sito
+pubblico serve verificare un dominio.
 
 Senza queste variabili l'app funziona identica, solo senza email. Se Resend
 fosse irraggiungibile la prenotazione viene comunque registrata: l'errore
@@ -132,11 +170,14 @@ progetto di produzione), ognuna su un database pulito:
   disdetta, chiusure, orizzonte, preavviso, doppie prenotazioni
 - `supabase/tests/age_rules_test.sql` — età minima, soglia accompagnatore,
   calcolo dell'età al giorno della prova, date di nascita non valide
+- `supabase/tests/approval_rules_test.sql` — account obbligatorio, posto tenuto
+  dalle richieste in attesa, approvazione e rifiuto, chi può decidere, annullamento
 
 ```bash
 psql "$DATABASE_URL" -f supabase/migrations/0001_init.sql
 psql "$DATABASE_URL" -f supabase/migrations/0002_age_and_guardian.sql
-psql "$DATABASE_URL" -f supabase/tests/booking_rules_test.sql
+psql "$DATABASE_URL" -f supabase/migrations/0003_accounts_and_approval.sql
+psql "$DATABASE_URL" -f supabase/tests/approval_rules_test.sql
 ```
 
 Su un Postgres locale servono prima gli stub di Supabase (schema `auth`,
@@ -153,6 +194,6 @@ supabase/           migrazione, seed e test delle regole
 
 ## Passi successivi possibili
 
-- Email di conferma anche al cliente, e promemoria il giorno prima
+- Promemoria automatico il giorno prima della prova
 - Rate limit per IP sulle prenotazioni anonime
 - Export CSV delle prenotazioni

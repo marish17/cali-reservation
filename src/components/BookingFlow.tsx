@@ -1,26 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { addDays, ageAt, formatDayLong, formatTime, toISODate } from "@/lib/date";
+import { useSession } from "@/lib/useSession";
 import Calendar from "@/components/Calendar";
+import SignIn from "@/components/SignIn";
+import { addDays, ageAt, formatDayLong, formatTime, toISODate } from "@/lib/date";
 import type { Availability, PublicSettings } from "@/lib/types";
 
 type Confirmation = {
   booking_id: string;
-  cancel_token: string;
   day: string;
   start_time: string;
   end_time: string;
-  coach_name: string;
-  age: number;
   guardian_required: boolean;
+  status: string;
 };
 
 type Form = {
   full_name: string;
   birth_date: string;
-  email: string;
   phone: string;
   guardian_name: string;
   guardian_phone: string;
@@ -30,14 +30,44 @@ type Form = {
 const EMPTY_FORM: Form = {
   full_name: "",
   birth_date: "",
-  email: "",
   phone: "",
   guardian_name: "",
   guardian_phone: "",
   notes: "",
 };
 
+// La scelta fatta prima di accedere va ritrovata al ritorno dal link
+// email, altrimenti si ricomincia da capo proprio dopo l'accesso.
+const PENDING_KEY = "cali:pending-selection";
+
+function savePending(day: string, slotId: string) {
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify({ day, slotId }));
+  } catch {
+    // Niente storage disponibile: si perde solo la comodita'.
+  }
+}
+
+function readPending(): { day: string; slotId: string } | null {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    return raw ? (JSON.parse(raw) as { day: string; slotId: string }) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearPending() {
+  try {
+    localStorage.removeItem(PENDING_KEY);
+  } catch {
+    // ignorato
+  }
+}
+
 export default function BookingFlow() {
+  const { session, loading: sessionLoading } = useSession();
+
   const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [availability, setAvailability] = useState<Availability[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +109,27 @@ export default function BookingFlow() {
     void load();
   }, [load]);
 
-  // Giorni in cui esiste almeno una fascia con il coach presente.
+  // Profilo gia' noto: il modulo parte compilato.
+  useEffect(() => {
+    if (!session) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, birth_date, phone, guardian_name, guardian_phone")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (!data) return;
+      setForm((current) => ({
+        ...current,
+        full_name: current.full_name || data.full_name || "",
+        birth_date: current.birth_date || data.birth_date || "",
+        phone: current.phone || data.phone || "",
+        guardian_name: current.guardian_name || data.guardian_name || "",
+        guardian_phone: current.guardian_phone || data.guardian_phone || "",
+      }));
+    })();
+  }, [session]);
+
   const days = useMemo(() => {
     const map = new Map<string, Availability[]>();
     for (const row of availability) {
@@ -92,10 +142,26 @@ export default function BookingFlow() {
         day,
         slots,
         remaining: slots.reduce((sum, s) => sum + s.remaining, 0),
-        dayRemaining: slots[0]?.day_remaining ?? 0,
       }))
       .sort((a, b) => a.day.localeCompare(b.day));
   }, [availability]);
+
+  // Ritorno dal link di accesso: si riprende da dove si era rimasti.
+  useEffect(() => {
+    if (!session || selectedDay || days.length === 0) return;
+    const pending = readPending();
+    if (!pending) return;
+    const day = days.find((d) => d.day === pending.day);
+    if (!day) {
+      clearPending();
+      return;
+    }
+    setSelectedDay(pending.day);
+    if (day.slots.some((s) => s.slot_id === pending.slotId && s.remaining > 0)) {
+      setSelectedSlot(pending.slotId);
+    }
+    clearPending();
+  }, [session, days, selectedDay]);
 
   useEffect(() => {
     if (selectedDay || days.length === 0) return;
@@ -106,6 +172,8 @@ export default function BookingFlow() {
   const currentDay = days.find((d) => d.day === selectedDay) ?? null;
   const currentSlot = currentDay?.slots.find((s) => s.slot_id === selectedSlot) ?? null;
 
+  // Il coach non e' una scelta dell'utente: due coach nella stessa
+  // fascia sono un orario solo.
   const timeSlots = useMemo(() => {
     if (!currentDay) return [];
     const map = new Map<
@@ -133,7 +201,6 @@ export default function BookingFlow() {
     return [...map.values()].sort((a, b) => a.start_time.localeCompare(b.start_time));
   }, [currentDay]);
 
-  // L'eta' che conta e' quella compiuta il giorno della prova.
   const age = currentSlot ? ageAt(form.birth_date, currentSlot.day) : null;
   const ageTooLow = age !== null && settings !== null && age < settings.min_age;
   const needsGuardian =
@@ -141,22 +208,22 @@ export default function BookingFlow() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!currentSlot || !selectedDay) return;
+    if (!currentSlot || !selectedDay || !session) return;
 
     setSubmitting(true);
     setFormError(null);
 
-    // Passiamo dal server: cosi' la notifica al coach parte anche se
-    // l'utente chiude la pagina subito dopo l'invio.
-    const response = await fetch("/api/book", {
+    const response = await fetch("/api/request", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify({
         slot_id: currentSlot.slot_id,
         day: selectedDay,
         full_name: form.full_name,
         birth_date: form.birth_date,
-        email: form.email,
         phone: form.phone,
         guardian_name: form.guardian_name || null,
         guardian_phone: form.guardian_phone || null,
@@ -176,8 +243,7 @@ export default function BookingFlow() {
       | null;
 
     if (!response.ok || !result?.booking) {
-      setFormError(result?.error ?? "Non è stato possibile completare la prenotazione.");
-      // La disponibilita' potrebbe essere cambiata sotto i piedi.
+      setFormError(result?.error ?? "Non è stato possibile inviare la richiesta.");
       void load();
       setSelectedSlot(null);
       return;
@@ -207,12 +273,51 @@ export default function BookingFlow() {
   }
 
   if (confirmation) {
-    return <Confirmed confirmation={confirmation} settings={settings} onReset={() => {
-      setConfirmation(null);
-      setForm(EMPTY_FORM);
-      setSelectedSlot(null);
-      void load();
-    }} />;
+    return (
+      <div className="card border-accent/45">
+        <span className="badge border-accent/60 text-accentSoft">Richiesta inviata</span>
+        <h2 className="mt-4 text-2xl font-semibold">Ci siamo quasi</h2>
+        <p className="mt-2 text-sm text-slate-300">
+          Il coach deve confermare la disponibilità per questo orario. Ti scriviamo via email
+          appena decide: il posto resta tenuto da parte fino ad allora.
+        </p>
+
+        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-slate-400">Giorno</dt>
+            <dd className="font-medium">{formatDayLong(confirmation.day)}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-400">Orario</dt>
+            <dd className="font-medium">
+              {formatTime(confirmation.start_time)} – {formatTime(confirmation.end_time)}
+            </dd>
+          </div>
+        </dl>
+
+        {confirmation.guardian_required && (
+          <p className="mt-5 rounded-xl border border-accent/45 bg-accent/[0.07] p-4 text-sm text-slate-200">
+            Ricorda: il giorno della prova serve la presenza del genitore o tutore indicato.
+          </p>
+        )}
+
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Link href="/le-mie-prenotazioni" className="btn-primary">
+            Vedi le tue richieste
+          </Link>
+          <button
+            className="btn-ghost"
+            onClick={() => {
+              setConfirmation(null);
+              setSelectedSlot(null);
+              void load();
+            }}
+          >
+            Chiedi un&apos;altra data
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -288,209 +393,148 @@ export default function BookingFlow() {
             {formatTime(currentSlot.end_time)}
           </p>
 
-          <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={submit}>
-            <div className="sm:col-span-2">
-              <label className="label" htmlFor="full_name">
-                Nome e cognome
-              </label>
-              <input
-                id="full_name"
-                className="field"
-                required
-                minLength={2}
-                autoComplete="name"
-                value={form.full_name}
-                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+          {sessionLoading ? (
+            <p className="mt-4 text-sm text-slate-400">Un attimo…</p>
+          ) : !session ? (
+            <div className="mt-4">
+              <SignIn
+                title="Serve un account per richiedere la prova"
+                description="Ti mandiamo un link via email: niente password. Ci serve per confermarti l'orario e per farti seguire la richiesta."
+                onBeforeSend={() => savePending(currentSlot.day, currentSlot.slot_id)}
               />
             </div>
+          ) : (
+            <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={submit}>
+              <div className="sm:col-span-2">
+                <label className="label" htmlFor="full_name">
+                  Nome e cognome
+                </label>
+                <input
+                  id="full_name"
+                  className="field"
+                  required
+                  minLength={2}
+                  autoComplete="name"
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                />
+              </div>
 
+              <div className="sm:col-span-2">
+                <label className="label" htmlFor="birth_date">
+                  Data di nascita
+                </label>
+                <input
+                  id="birth_date"
+                  type="date"
+                  className="field"
+                  required
+                  max={toISODate(new Date())}
+                  value={form.birth_date}
+                  onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
+                />
+                {age !== null && (
+                  <p
+                    className={[
+                      "mt-1.5 text-xs",
+                      ageTooLow ? "text-red-300" : "text-slate-400",
+                    ].join(" ")}
+                  >
+                    {ageTooLow
+                      ? `Per partecipare bisogna avere almeno ${settings?.min_age} anni.`
+                      : `${age} anni il giorno della prova.`}
+                  </p>
+                )}
+              </div>
 
-            <div className="sm:col-span-2">
-              <label className="label" htmlFor="birth_date">
-                Data di nascita
-              </label>
-              <input
-                id="birth_date"
-                type="date"
-                className="field"
-                required
-                max={toISODate(new Date())}
-                value={form.birth_date}
-                onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
-              />
-              {age !== null && (
-                <p
-                  className={[
-                    "mt-1.5 text-xs",
-                    ageTooLow ? "text-red-300" : "text-slate-400",
-                  ].join(" ")}
-                >
-                  {ageTooLow
-                    ? `Per partecipare bisogna avere almeno ${settings?.min_age} anni.`
-                    : `${age} anni il giorno della prova.`}
-                </p>
-              )}
-            </div>
+              <div className="sm:col-span-2">
+                <label className="label" htmlFor="phone">
+                  Telefono
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  className="field"
+                  required
+                  autoComplete="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                />
+              </div>
 
-            <div>
-              <label className="label" htmlFor="email">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                className="field"
-                required
-                autoComplete="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </div>
+              {needsGuardian && (
+                <div className="sm:col-span-2 rounded-xl border border-accent/45 bg-accent/[0.07] p-4">
+                  <p className="text-sm text-slate-200">
+                    Sotto i {settings?.guardian_required_under_age} anni la prova si svolge
+                    accompagnati da un genitore o tutore, che deve essere presente in palestra.
+                  </p>
 
-            <div>
-              <label className="label" htmlFor="phone">
-                Telefono
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                className="field"
-                required
-                autoComplete="tel"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              />
-            </div>
-
-
-            {needsGuardian && (
-              <div className="sm:col-span-2 rounded-xl border border-accent/45 bg-accent/[0.07] p-4">
-                <p className="text-sm text-slate-200">
-                  Sotto i {settings?.guardian_required_under_age} anni la prova si svolge
-                  accompagnati da un genitore o tutore, che deve essere presente in palestra.
-                </p>
-
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="label" htmlFor="guardian_name">
-                      Nome e cognome del genitore
-                    </label>
-                    <input
-                      id="guardian_name"
-                      className="field"
-                      required
-                      value={form.guardian_name}
-                      onChange={(e) => setForm({ ...form, guardian_name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="label" htmlFor="guardian_phone">
-                      Telefono del genitore
-                    </label>
-                    <input
-                      id="guardian_phone"
-                      type="tel"
-                      className="field"
-                      required
-                      value={form.guardian_phone}
-                      onChange={(e) => setForm({ ...form, guardian_phone: e.target.value })}
-                    />
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="label" htmlFor="guardian_name">
+                        Nome e cognome del genitore
+                      </label>
+                      <input
+                        id="guardian_name"
+                        className="field"
+                        required
+                        value={form.guardian_name}
+                        onChange={(e) => setForm({ ...form, guardian_name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="label" htmlFor="guardian_phone">
+                        Telefono del genitore
+                      </label>
+                      <input
+                        id="guardian_phone"
+                        type="tel"
+                        className="field"
+                        required
+                        value={form.guardian_phone}
+                        onChange={(e) => setForm({ ...form, guardian_phone: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
+              )}
+
+              <div className="sm:col-span-2">
+                <label className="label" htmlFor="notes">
+                  Note per il coach (facoltativo)
+                </label>
+                <textarea
+                  id="notes"
+                  className="field min-h-[84px] resize-y"
+                  maxLength={500}
+                  placeholder="Esperienza pregressa, infortuni, obiettivi..."
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
               </div>
-            )}
 
-            <div className="sm:col-span-2">
-              <label className="label" htmlFor="notes">
-                Note per il coach (facoltativo)
-              </label>
-              <textarea
-                id="notes"
-                className="field min-h-[84px] resize-y"
-                maxLength={500}
-                placeholder="Esperienza pregressa, infortuni, obiettivi..."
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              />
-            </div>
+              {formError && (
+                <p className="sm:col-span-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                  {formError}
+                </p>
+              )}
 
-            {formError && (
-              <p className="sm:col-span-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                {formError}
-              </p>
-            )}
-
-            <div className="sm:col-span-2">
-              <button
-                type="submit"
-                className="btn-primary w-full sm:w-auto"
-                disabled={submitting || ageTooLow}
-              >
-                {submitting ? "Invio in corso..." : "Conferma la prenotazione"}
-              </button>
-            </div>
-          </form>
+              <div className="sm:col-span-2">
+                <button
+                  type="submit"
+                  className="btn-primary w-full sm:w-auto"
+                  disabled={submitting || ageTooLow}
+                >
+                  {submitting ? "Invio in corso…" : "Invia la richiesta"}
+                </button>
+                <p className="mt-2 text-xs text-slate-500">
+                  La prova è confermata solo dopo l&apos;approvazione del coach.
+                </p>
+              </div>
+            </form>
+          )}
         </section>
       )}
-    </div>
-  );
-}
-
-function Confirmed({
-  confirmation,
-  settings,
-  onReset,
-}: {
-  confirmation: Confirmation;
-  settings: PublicSettings | null;
-  onReset: () => void;
-}) {
-  const cancelUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/disdetta?token=${confirmation.cancel_token}`
-      : `/disdetta?token=${confirmation.cancel_token}`;
-
-  return (
-    <div className="card border-accent/40">
-      <span className="badge border-accent/60 text-accentSoft">Prenotazione confermata</span>
-      <h2 className="mt-4 text-2xl font-semibold">Ci vediamo in palestra!</h2>
-      <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="text-slate-400">Giorno</dt>
-          <dd className="font-medium">{formatDayLong(confirmation.day)}</dd>
-        </div>
-        <div>
-          <dt className="text-slate-400">Orario</dt>
-          <dd className="font-medium">
-            {formatTime(confirmation.start_time)} – {formatTime(confirmation.end_time)}
-          </dd>
-        </div>
-        {settings?.contact_phone && (
-          <div>
-            <dt className="text-slate-400">Contatti</dt>
-            <dd className="font-medium">{settings.contact_phone}</dd>
-          </div>
-        )}
-      </dl>
-
-      {confirmation.guardian_required && (
-        <p className="mt-5 rounded-xl border border-accent/45 bg-accent/[0.07] p-4 text-sm text-slate-200">
-          Ricorda: il giorno della prova serve la presenza del genitore o tutore indicato.
-        </p>
-      )}
-
-      <div className="mt-6 rounded-xl border border-line bg-ink/50 p-4">
-        <p className="text-sm text-slate-300">
-          Salva questo link: ti serve per disdire la prova se non potessi venire.
-        </p>
-        <a className="mt-2 block break-all text-sm text-accentSoft underline" href={cancelUrl}>
-          {cancelUrl}
-        </a>
-      </div>
-
-      <button className="btn-ghost mt-6" onClick={onReset}>
-        Prenota un&apos;altra prova
-      </button>
     </div>
   );
 }
