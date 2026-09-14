@@ -6,10 +6,17 @@ massimo di prove per giornata. Chi prenota si registra con email e password e
 invia una **richiesta**: la prova è confermata solo quando il coach la approva.
 Coach, orari e approvazioni si gestiscono da un pannello riservato.
 
-**L'app non invia email.** Le notifiche vivono dentro il sito: un contatore
-accanto a *Le mie richieste* per chi prenota, uno sulle richieste da evadere per
-il coach, e un avviso del browser quando ne arriva una nuova. L'indirizzo email
-serve solo come nome utente, e resta nel database.
+**L'app non invia email.** L'indirizzo serve solo come nome utente e resta nel
+database. Gli avvisi arrivano per altre due strade:
+
+- **Dentro il sito**: un contatore accanto a *Le mie richieste* per chi prenota,
+  uno sulle richieste da evadere per il coach.
+- **Notifiche push**, anche ad app chiusa, per chi le attiva. Vanno configurate
+  una volta sola seguendo `supabase/functions/push/SETUP.md`; finché non lo
+  sono, il resto funziona identico.
+
+Su iPhone le push arrivano solo se il sito è stato aggiunto alla schermata Home:
+la pagina principale lo spiega a chi non l'ha fatto.
 
 - **Stack**: Next.js 14 in esportazione statica (App Router, TypeScript, Tailwind) + Supabase (Postgres, Auth, RLS)
 - **Pagine pubbliche**: `/` prenotazione, `/le-mie-prenotazioni` stato delle proprie richieste, `/privacy` informativa
@@ -109,6 +116,7 @@ incolla per intero, **in ordine**:
 6. `supabase/migrations/0006_privacy.sql` — informativa privacy e consenso
 7. `supabase/migrations/0007_coach_cancel.sql` — annullamento di una prova da parte del coach
 8. `supabase/migrations/0008_in_app_notifications.sql` — notifiche dentro l'app
+9. `supabase/migrations/0009_push_notifications.sql` — notifiche push
 
 Per sapere quali risultano già applicate:
 `supabase/checks/verifica_migrazioni.sql` risponde con un elenco leggibile e
@@ -227,6 +235,8 @@ progetto di produzione), ognuna su un database pulito:
   liberato, doppio annullamento, chi può annullare
 - `supabase/tests/notifications_test.sql` — conteggio delle novità per l'utente,
   coda delle richieste per il coach, presa visione, separazione fra utenti
+- `supabase/tests/push_test.sql` — registrazione dei dispositivi, destinatari di
+  ogni evento, isolamento fra utenti, recapiti scaduti
 - `supabase/tests/security_test.sql` — chi può leggere e scrivere cosa: verifica
   che un visitatore non veda nessun dato personale, che un utente registrato veda
   soltanto i propri, e che non possa scrivere direttamente nelle tabelle
@@ -261,7 +271,7 @@ supabase/           migrazione, seed e test delle regole
 
 ## Passi successivi possibili
 
-- Promemoria il giorno prima della prova, dentro l'app
+- Promemoria il giorno prima della prova
 - Export CSV delle prenotazioni
 - Email, se un giorno servirà: va configurato un SMTP in Supabase per i
   messaggi di autenticazione, e da lì si può riattivare anche l'invio degli

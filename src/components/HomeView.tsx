@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import BookingFlow from "@/components/BookingFlow";
+import InstallHint from "@/components/InstallHint";
 import SetupNotice from "@/components/SetupNotice";
 import TopBar from "@/components/TopBar";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
@@ -36,6 +37,8 @@ export default function HomeView() {
             "Scegli il giorno e l'orario in cui il coach è presente. Bastano trenta secondi."}
         </p>
       </header>
+
+      <InstallHint />
 
       {isSupabaseConfigured ? <BookingFlow /> : <SetupNotice />}
 

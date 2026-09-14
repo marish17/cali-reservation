@@ -7,7 +7,7 @@ import Logo from "@/components/Logo";
 import { supabase } from "@/lib/supabase";
 import { useCount } from "@/lib/useCount";
 import CountBadge from "@/components/CountBadge";
-import NotificationStatus from "@/components/NotificationStatus";
+import PushToggle from "@/components/PushToggle";
 
 const NAV = [
   { href: "/admin", label: "Prenotazioni" },
@@ -117,7 +117,7 @@ function AdminChrome({
       </header>
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <NotificationStatus />
+        <PushToggle audience="coach" />
       </div>
 
       <nav className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
