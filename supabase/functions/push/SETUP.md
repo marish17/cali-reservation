@@ -6,9 +6,13 @@ Finché non è completato, il sito funziona esattamente come adesso: il
 bottone per attivare le notifiche mostra "notifiche non ancora
 configurate" e nient'altro si rompe.
 
-## 1. La migrazione
+## 1. Le migrazioni
 
-SQL Editor di Supabase → esegui `supabase/migrations/0009_push_notifications.sql`.
+SQL Editor di Supabase → esegui, in ordine:
+
+- `supabase/migrations/0009_push_notifications.sql`
+- `supabase/migrations/0010_push_triggers.sql`
+- `supabase/migrations/0011_public_settings_vapid.sql`
 
 ## 2. Le chiavi
 
@@ -73,8 +77,7 @@ prenotazione che esiste già.
 
 ## 5. Dire al database dove chiamare
 
-Esegui `supabase/migrations/0010_push_triggers.sql`, poi, sostituendo i
-due valori:
+Sostituendo i due valori:
 
 ```sql
 insert into public.private_config (key, value) values

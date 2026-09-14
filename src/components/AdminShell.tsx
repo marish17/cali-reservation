@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import CoachLogin from "@/components/CoachLogin";
 import { supabase } from "@/lib/supabase";
 import { useCount } from "@/lib/useCount";
 import CountBadge from "@/components/CountBadge";
@@ -18,12 +19,10 @@ const NAV = [
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const pathname = usePathname();
-  const [state, setState] = useState<"checking" | "ok" | "denied">("checking");
+  const [state, setState] = useState<"checking" | "anon" | "ok" | "denied">("checking");
   const [email, setEmail] = useState<string | null>(null);
-  const signOut = () =>
-    void supabase.auth.signOut().then(() => router.replace("/admin/login"));
+  const signOut = () => void supabase.auth.signOut();
 
   useEffect(() => {
     let cancelled = false;
@@ -33,8 +32,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       if (cancelled) return;
 
       if (!data.session) {
-        router.replace("/admin/login");
-        setState("checking");
+        // L'accesso si mostra qui invece di mandare il browser altrove:
+        // con un sito statico quel salto può non arrivare mai, e si
+        // resta fermi su "Verifica accesso" per sempre.
+        setEmail(null);
+        setState("anon");
         return;
       }
 
@@ -50,10 +52,25 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       cancelled = true;
       sub.subscription.unsubscribe();
     };
-  }, [router]);
+  }, []);
 
   if (state === "checking") {
     return <div className="mx-auto max-w-md px-4 py-20 text-sm text-slate-400">Verifica accesso…</div>;
+  }
+
+  if (state === "anon") {
+    return (
+      <main className="mx-auto w-full max-w-sm px-4 py-16">
+        <div className="mb-6 flex items-center gap-3">
+          <Logo size={32} />
+          <h1 className="text-2xl font-bold">Area coach</h1>
+        </div>
+        <p className="mb-6 text-sm text-slate-400">
+          Accedi per gestire orari, prenotazioni e approvazioni.
+        </p>
+        <CoachLogin />
+      </main>
+    );
   }
 
   if (state === "denied") {

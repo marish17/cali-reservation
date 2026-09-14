@@ -118,6 +118,7 @@ incolla per intero, **in ordine**:
 8. `supabase/migrations/0008_in_app_notifications.sql` — notifiche dentro l'app
 9. `supabase/migrations/0009_push_notifications.sql` — notifiche push
 10. `supabase/migrations/0010_push_triggers.sql` — inneschi che fanno partire le push
+11. `supabase/migrations/0011_public_settings_vapid.sql` — la chiave delle push arriva al browser
 
 Per sapere quali risultano già applicate:
 `supabase/checks/verifica_migrazioni.sql` risponde con un elenco leggibile e

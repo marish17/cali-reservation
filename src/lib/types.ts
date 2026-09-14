@@ -9,6 +9,7 @@ export type PublicSettings = {
   contact_email: string | null;
   contact_phone: string | null;
   privacy_text: string | null;
+  vapid_public_key: string | null;
 };
 
 export type Availability = {

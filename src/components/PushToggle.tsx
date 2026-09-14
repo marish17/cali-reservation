@@ -62,19 +62,24 @@ export default function PushToggle({ audience }: { audience: "coach" | "booker" 
     );
   }
 
+  if (!publicKey) {
+    return (
+      <span className="text-[11px] text-slate-500">
+        Notifiche non ancora configurate sul server.
+      </span>
+    );
+  }
+
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
       <button
         className="btn-ghost !min-h-[32px] !px-3 text-[11px]"
         onClick={() => void enable()}
-        disabled={busy || !publicKey}
+        disabled={busy}
       >
         {busy ? "Attivo…" : `Avvisami ${what}`}
       </button>
       {error && <span className="text-[11px] text-red-300">{error}</span>}
-      {!publicKey && !error && (
-        <span className="text-[11px] text-slate-500">notifiche non ancora configurate</span>
-      )}
     </span>
   );
 }
