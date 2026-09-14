@@ -107,9 +107,9 @@ export default function MyBookings() {
             className={["card", isNew ? "border-accent/60" : ""].join(" ")}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold">{formatDayLong(row.day)}</p>
-                <p className="mt-0.5 text-xs text-slate-400">
+              <div className="min-w-0">
+                <p className="text-base font-semibold first-letter:uppercase">{formatDayLong(row.day)}</p>
+                <p className="mt-0.5 text-sm text-slate-400">
                   {formatTime(row.start_time)} – {formatTime(row.end_time)}
                 </p>
               </div>
@@ -152,7 +152,7 @@ export default function MyBookings() {
 
             {cancellable && (
               <button
-                className="btn-ghost mt-4 !px-3 !py-1.5 text-xs"
+                className="btn-ghost mt-4 w-full !min-h-[40px] text-xs sm:w-auto"
                 onClick={() => void cancel(row.id)}
               >
                 Annulla la richiesta

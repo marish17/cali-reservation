@@ -4,6 +4,8 @@ const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Sotto i 380px (iPhone SE e simili) alcune etichette vanno accorciate.
+      screens: { xs: "440px" },
       colors: {
         ink: "#0a0a0b",       // nero di fondo
         surface: "#141416",   // superfici sollevate

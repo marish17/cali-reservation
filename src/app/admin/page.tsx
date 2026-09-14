@@ -108,13 +108,13 @@ export default function AdminBookingsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
         {FILTERS.map(([value, label]) => (
           <button
             key={value}
             onClick={() => setFilter(value)}
             className={[
-              "rounded-xl border px-3 py-1.5 text-xs transition",
+              "min-h-[38px] shrink-0 whitespace-nowrap rounded-xl border px-3.5 text-xs transition active:scale-[0.98]",
               filter === value
                 ? "border-accent bg-accent/10 text-accentSoft"
                 : "border-line text-slate-300 hover:border-slate-500",
@@ -166,7 +166,7 @@ export default function AdminBookingsPage() {
                     </span>
                   )}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">
+                <p className="mt-0.5 text-xs first-letter:uppercase text-slate-400">
                   {formatDayLong(row.day)} · {formatTime(row.start_time)}–{formatTime(row.end_time)}
                   {row.coaches ? ` · ${row.coaches.name}` : ""}
                 </p>
@@ -220,18 +220,18 @@ export default function AdminBookingsPage() {
                   value={notes[row.id] ?? ""}
                   onChange={(e) => setNotes({ ...notes, [row.id]: e.target.value })}
                 />
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
                   {row.status === "pending" ? (
                     <>
                       <button
-                        className="btn-primary !px-4 !py-2 text-xs"
+                        className="btn-primary text-sm"
                         disabled={busyId === row.id}
                         onClick={() => void decide(row, "approved")}
                       >
                         {busyId === row.id ? "Attendi…" : "Conferma la prova"}
                       </button>
                       <button
-                        className="btn-ghost !px-4 !py-2 text-xs"
+                        className="btn-ghost text-sm"
                         disabled={busyId === row.id}
                         onClick={() => void decide(row, "rejected")}
                       >
@@ -240,7 +240,7 @@ export default function AdminBookingsPage() {
                     </>
                   ) : (
                     <button
-                      className="btn-ghost !px-4 !py-2 text-xs"
+                      className="btn-ghost text-sm"
                       disabled={busyId === row.id}
                       onClick={() => void decide(row, "cancelled")}
                     >

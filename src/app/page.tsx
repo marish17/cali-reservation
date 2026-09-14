@@ -26,14 +26,14 @@ export default async function HomePage() {
   const settings = configured ? await loadSettings() : null;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:py-16">
+    <main className="mx-auto w-full max-w-3xl px-4 pb-10 pt-3 sm:pb-16 sm:pt-6">
       <TopBar gymName={settings?.gym_name ?? "Calisthenics Academy"} />
 
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold leading-tight sm:text-4xl">
+      <header className="mb-6 sm:mb-8">
+        <h1 className="text-[26px] font-bold leading-[1.15] sm:text-4xl">
           Prenota la tua prova gratuita
         </h1>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-400">
+        <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-slate-400">
           {settings?.intro_text ??
             "Scegli il giorno e l'orario in cui il coach è presente. Bastano trenta secondi."}
         </p>
@@ -41,12 +41,21 @@ export default async function HomePage() {
 
       {configured ? <BookingFlow /> : <SetupNotice />}
 
-      <footer className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-6 text-xs text-slate-500">
-        {settings?.contact_email && <span>{settings.contact_email}</span>}
-        {settings?.contact_phone && <span>{settings.contact_phone}</span>}
-        <a className="ml-auto hover:text-slate-300" href="/privacy">
-          Informativa privacy
-        </a>
+      <footer className="mt-10 border-t border-line pt-4 text-xs text-slate-500">
+        {(settings?.contact_email || settings?.contact_phone) && (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 py-2">
+            {settings?.contact_email && <span>{settings.contact_email}</span>}
+            {settings?.contact_phone && <span>{settings.contact_phone}</span>}
+          </div>
+        )}
+        <div className="flex items-center justify-between">
+          <a className="inline-flex min-h-[40px] items-center hover:text-slate-300" href="/privacy">
+            Informativa privacy
+          </a>
+          <a className="inline-flex min-h-[40px] items-center hover:text-slate-300" href="/admin">
+            Area coach
+          </a>
+        </div>
       </footer>
     </main>
   );

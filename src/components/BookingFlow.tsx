@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { bookingErrorMessage } from "@/lib/errors";
@@ -82,6 +82,18 @@ export default function BookingFlow() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+
+  // Da telefono i tre passi non stanno nella stessa schermata: dopo una
+  // scelta si accompagna la persona al passo dopo, invece di lasciarla
+  // davanti a una pagina che sembra non aver reagito.
+  const slotsRef = useRef<HTMLElement | null>(null);
+  const formRef = useRef<HTMLElement | null>(null);
+
+  const scrollTo = (ref: React.RefObject<HTMLElement>) => {
+    window.requestAnimationFrame(() => {
+      ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -297,7 +309,7 @@ export default function BookingFlow() {
           </p>
         )}
 
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-6 grid gap-2 sm:flex sm:flex-wrap">
           <Link href="/le-mie-prenotazioni" className="btn-primary">
             Vedi le tue richieste
           </Link>
@@ -319,7 +331,10 @@ export default function BookingFlow() {
   return (
     <div className="space-y-6">
       <section className="card">
-        <h2 className="text-lg font-semibold">1. Scegli il giorno</h2>
+        <h2 className="flex items-center gap-2.5 text-lg font-semibold">
+          <span className="step-number">1</span>
+          Scegli il giorno
+        </h2>
 
         {days.length === 0 ? (
           <p className="mt-4 text-sm text-slate-400">
@@ -336,6 +351,7 @@ export default function BookingFlow() {
                 setSelectedDay(day);
                 setSelectedSlot(null);
                 setFormError(null);
+                scrollTo(slotsRef);
               }}
             />
           </div>
@@ -343,9 +359,14 @@ export default function BookingFlow() {
       </section>
 
       {currentDay && (
-        <section className="card">
-          <h2 className="text-lg font-semibold">2. Scegli l&apos;orario</h2>
-          <p className="mt-1 text-sm text-slate-400">{formatDayLong(currentDay.day)}</p>
+        <section className="card scroll-mt-20" ref={slotsRef}>
+          <h2 className="flex items-center gap-2.5 text-lg font-semibold">
+            <span className="step-number">2</span>
+            Scegli l&apos;orario
+          </h2>
+          <p className="mt-1.5 pl-[38px] text-sm first-letter:uppercase text-slate-400">
+            {formatDayLong(currentDay.day)}
+          </p>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {timeSlots.map((slot) => {
@@ -359,20 +380,26 @@ export default function BookingFlow() {
                   onClick={() => {
                     setSelectedSlot(slot.slot_id);
                     setFormError(null);
+                    scrollTo(formRef);
                   }}
                   className={[
-                    "flex items-center justify-between rounded-xl border px-4 py-3 text-left transition",
+                    "flex min-h-[56px] items-center justify-between rounded-xl border px-4 text-left transition active:scale-[0.99]",
                     isSelected
-                      ? "border-accent bg-accent/10"
-                      : "border-line bg-ink/40 hover:border-slate-500",
-                    full ? "cursor-not-allowed opacity-40" : "",
+                      ? "border-accent bg-accent/15 shadow-lg shadow-accent/10"
+                      : "border-line bg-white/[0.04] hover:border-slate-500",
+                    full ? "cursor-not-allowed opacity-40 active:scale-100" : "",
                   ].join(" ")}
                 >
-                  <span className="text-sm font-semibold">
+                  <span className="text-base font-semibold">
                     {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
                   </span>
-                  <span className="text-xs text-slate-400">
-                    {full ? "completo" : "disponibile"}
+                  <span
+                    className={[
+                      "text-xs",
+                      isSelected ? "font-semibold text-accentSoft" : "text-slate-400",
+                    ].join(" ")}
+                  >
+                    {full ? "completo" : isSelected ? "scelto" : "disponibile"}
                   </span>
                 </button>
               );
@@ -382,10 +409,13 @@ export default function BookingFlow() {
       )}
 
       {currentSlot && (
-        <section className="card">
-          <h2 className="text-lg font-semibold">3. I tuoi dati</h2>
-          <p className="mt-1 text-sm text-slate-400">
-            {formatDayLong(currentSlot.day)}, ore {formatTime(currentSlot.start_time)} –{" "}
+        <section className="card scroll-mt-20" ref={formRef}>
+          <h2 className="flex items-center gap-2.5 text-lg font-semibold">
+            <span className="step-number">3</span>
+            I tuoi dati
+          </h2>
+          <p className="mt-1.5 pl-[38px] text-sm first-letter:uppercase text-slate-400">
+            {formatDayLong(currentSlot.day)}, {formatTime(currentSlot.start_time)}–
             {formatTime(currentSlot.end_time)}
           </p>
 
@@ -547,7 +577,7 @@ export default function BookingFlow() {
                 </label>
               </div>
 
-              <div className="sm:col-span-2">
+              <div className="action-bar sm:col-span-2">
                 <button
                   type="submit"
                   className="btn-primary w-full sm:w-auto"
@@ -555,7 +585,7 @@ export default function BookingFlow() {
                 >
                   {submitting ? "Invio in corso…" : "Invia la richiesta"}
                 </button>
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-center text-xs text-slate-500 sm:text-left">
                   La prova è confermata solo dopo l&apos;approvazione del coach.
                 </p>
               </div>

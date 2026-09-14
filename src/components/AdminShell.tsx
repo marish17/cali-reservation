@@ -105,7 +105,7 @@ function AdminChrome({
   }, [increased, pending, acknowledge]);
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8">
+    <div className="mx-auto w-full max-w-5xl px-4 pb-10 pt-5">
       <header className="mb-6 flex flex-wrap items-center gap-3 border-b border-line pb-4">
         <Logo size={32} />
         <h1 className="text-lg font-bold">Area coach</h1>
@@ -116,13 +116,13 @@ function AdminChrome({
         </button>
       </header>
 
-      <nav className="mb-6 flex flex-wrap gap-2">
+      <nav className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
         {NAV.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={[
-              "inline-flex items-center rounded-xl border px-3 py-2 text-sm transition",
+              "inline-flex min-h-[42px] shrink-0 items-center whitespace-nowrap rounded-xl border px-3.5 text-sm transition active:scale-[0.98]",
               pathname === item.href
                 ? "border-accent bg-accent/10 text-accentSoft"
                 : "border-line text-slate-300 hover:border-slate-500",

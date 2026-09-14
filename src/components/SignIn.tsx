@@ -104,13 +104,13 @@ export default function SignIn({
 
       {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-4 grid gap-3 sm:flex sm:items-center">
         <button type="submit" className="btn-primary" disabled={busy}>
           {busy ? "Attendi…" : mode === "signup" ? "Crea l'account" : "Accedi"}
         </button>
         <button
           type="button"
-          className="text-xs text-slate-400 underline hover:text-slate-200"
+          className="min-h-[40px] text-sm text-slate-400 underline underline-offset-4 hover:text-slate-200"
           onClick={() => {
             setMode(mode === "signup" ? "signin" : "signup");
             setError(null);

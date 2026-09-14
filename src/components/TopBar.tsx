@@ -8,43 +8,41 @@ import { useCount } from "@/lib/useCount";
 import CountBadge from "@/components/CountBadge";
 
 /**
- * Barra di servizio in cima alla pagina. In fondo, da telefono,
- * questi collegamenti restavano sotto un modulo lungo e di fatto
- * irraggiungibili.
+ * Barra di servizio, ancorata in cima. Da telefono resta visibile
+ * mentre si scorre il modulo: è l'unico punto da cui si raggiungono le
+ * proprie richieste, e in fondo alla pagina non lo troverebbe nessuno.
  */
 export default function TopBar({ gymName }: { gymName: string }) {
   const { session } = useSession();
 
   return (
-    <div className="mb-8 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line pb-3">
-      <Link href="/" className="flex items-center gap-2.5">
-        <Logo size={38} />
-        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-accentSoft">
-          {gymName}
-        </span>
-      </Link>
+    <div className="sticky top-0 z-30 -mx-4 mb-6 border-b border-line bg-ink/90 px-4 backdrop-blur-md sm:mb-8">
+      <div className="flex items-center gap-3 py-2.5">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+          <Logo size={36} />
+          <span className="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-accentSoft sm:text-xs">
+            {gymName}
+          </span>
+        </Link>
 
-      <nav className="ml-auto flex items-center gap-2 text-xs">
         <Link
           href="/le-mie-prenotazioni"
-          className="inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-slate-200 transition hover:border-slate-500 hover:bg-white/5"
+          className="ml-auto inline-flex min-h-[38px] shrink-0 items-center rounded-xl border border-line px-3 text-xs font-medium text-slate-200 transition active:scale-[0.98] hover:border-slate-500 hover:bg-white/5"
         >
-          Le mie richieste
+          <span className="hidden xs:inline">Le mie richieste</span>
+          <span className="xs:hidden">Richieste</span>
           {session && <MyUpdatesBadge />}
         </Link>
-        <Link
-          href="/admin"
-          className="rounded-lg border border-line px-3 py-1.5 text-slate-400 transition hover:border-slate-500 hover:text-slate-200"
-        >
-          Area coach
-        </Link>
-      </nav>
+      </div>
 
       {session && (
-        <div className="flex w-full items-center gap-3 text-xs text-slate-500">
+        <div className="flex items-center gap-3 border-t border-line/60 py-2 text-[11px] text-slate-500">
           <span className="truncate">{session.user.email}</span>
+          <Link href="/admin" className="ml-auto shrink-0 hover:text-slate-300">
+            Area coach
+          </Link>
           <button
-            className="ml-auto shrink-0 hover:text-slate-300"
+            className="shrink-0 hover:text-slate-300"
             onClick={() => void supabase.auth.signOut()}
           >
             Esci
