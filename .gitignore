@@ -7,3 +7,9 @@ out
 next-env.d.ts
 .DS_Store
 out
+
+# Stato locale dello strumento supabase: cambia a ogni comando e non
+# serve a nessun altro.
+supabase/.temp
+supabase/.branches
+supabase/.env
