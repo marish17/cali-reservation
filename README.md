@@ -11,8 +11,13 @@ accanto a *Le mie richieste* per chi prenota, uno sulle richieste da evadere per
 il coach, e un avviso del browser quando ne arriva una nuova. L'indirizzo email
 serve solo come nome utente, e resta nel database.
 
-- **Stack**: Next.js 14 (App Router, TypeScript, Tailwind) + Supabase (Postgres, Auth, RLS)
+- **Stack**: Next.js 14 in esportazione statica (App Router, TypeScript, Tailwind) + Supabase (Postgres, Auth, RLS)
 - **Pagine pubbliche**: `/` prenotazione, `/le-mie-prenotazioni` stato delle proprie richieste, `/privacy` informativa
+
+Il sito è un pacchetto di file statici: non c'è nessun processo acceso a
+generarli, e ogni dato arriva da Supabase direttamente dal browser. Le regole
+di accesso vivono tutte nel database (policy RLS e funzioni `security
+definer`), quindi non serve un server intermedio a farle rispettare.
 - **Area riservata**: `/admin` (approvazioni, coach e orari, chiusure, impostazioni, accessi)
 
 ## Privacy
@@ -174,30 +179,22 @@ npm run dev      # http://localhost:3000
 
 ## Deploy su Netlify
 
-Il repository contiene già `netlify.toml` e `.nvmrc`: Netlify usa il runtime
-Next.js, necessario perché le route server (`/api/request`, `/api/decide`)
-funzionino. Un deploy statico non basta.
+Il repository contiene già `netlify.toml` e `.nvmrc`. La build produce la
+cartella `out/`, che Netlify serve così com'è: nessuna funzione serverless,
+quindi nessuna invocazione da pagare.
 
 1. Netlify → **Add new site → Import an existing project** → scegli il repository
 2. Build command e publish directory arrivano da `netlify.toml`: non toccarli
-3. **Site configuration → Environment variables**: aggiungi le stesse voci di
-   `.env.local`. Le due `NEXT_PUBLIC_…` sono obbligatorie; le tre dell'email
-   solo se vuoi le notifiche
-4. Fai il deploy e segnati l'indirizzo assegnato (es. `nome-sito.netlify.app`)
+3. **Site configuration → Environment variables**: aggiungi le due voci
+   `NEXT_PUBLIC_…`
 
-### Dopo il primo deploy, obbligatorio
+**Le variabili vengono incorporate durante la build**, non lette mentre il sito
+gira: dopo averle cambiate serve un nuovo deploy, salvarle non basta.
 
-Supabase → **Authentication → URL Configuration**:
-
-- **Site URL**: l'indirizzo del sito pubblicato
-- **Redirect URLs**: aggiungi `https://nome-sito.netlify.app/**`, tenendo anche
-  `http://localhost:3000/**` per lo sviluppo
-
-Senza questo passaggio il link di accesso inviato per email non riporta al sito
-e **nessuno riesce a prenotare**. È l'errore più facile da fare pubblicando.
-
-Le variabili d'ambiente si leggono al momento della build: dopo averle
-cambiate serve un nuovo deploy, non basta salvarle.
+Per pubblicare a comando invece che a ogni push — utile quando i crediti di
+build scarseggiano — metti **Build status: Stopped builds** nelle impostazioni
+di deploy. I push non fanno più partire nulla; quando vuoi pubblicare rimetti
+*Active builds* e lancia **Deploys → Trigger deploy**.
 
 ### Lo scanner dei segreti
 

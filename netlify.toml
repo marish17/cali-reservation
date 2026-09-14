@@ -1,27 +1,22 @@
-# Netlify riconosce Next.js da solo, ma tenere la configurazione nel
-# repository evita che un'impostazione cambiata a mano nel pannello si
-# perda o diverga da quello che gira in locale.
+# Il sito è statico: Netlify serve i file prodotti dalla build, senza
+# tenere acceso alcun runtime. Nessuna funzione serverless, quindi
+# nessuna invocazione da pagare.
 
 [build]
   command = "npm run build"
-  publish = ".next"
+  publish = "out"
 
 [build.environment]
   NODE_VERSION = "22"
 
   # Lo scanner di Netlify segnala qualunque variabile il cui valore
-  # finisca nei file prodotti dalla build. Queste due ci finiscono per
-  # progetto: devono stare nel browser, perché sono l'indirizzo del
-  # database e la chiave pubblica con cui il sito lo interroga. A
-  # proteggere i dati sono le policy RLS, verificate in
-  # supabase/tests/security_test.sql, non la loro segretezza — è quello
-  # che dichiara il prefisso NEXT_PUBLIC_.
+  # finisca nei file prodotti. Queste due ci finiscono per progetto:
+  # devono stare nel browser, perché sono l'indirizzo del database e la
+  # chiave pubblica con cui il sito lo interroga. A proteggere i dati
+  # sono le policy RLS, verificate in supabase/tests/security_test.sql,
+  # non la loro segretezza — è quello che dichiara il prefisso
+  # NEXT_PUBLIC_.
   #
   # L'elenco si ferma qui di proposito: se un domani comparisse un vero
   # segreto nei file della build, è giusto che la build si fermi.
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
-
-# Il runtime Next.js serve le pagine rese dal server (home e
-# informativa privacy) e la loro rigenerazione periodica.
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
