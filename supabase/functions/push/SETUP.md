@@ -40,54 +40,56 @@ una ricostruzione.
 
 ## 4. La funzione che spedisce
 
-Serve lo strumento a riga di comando di Supabase:
+Serve lo strumento a riga di comando di Supabase (su Mac:
+`brew install supabase/tap/supabase`, altrimenti anteponi `npx` a ogni
+comando):
 
 ```bash
-npm install -g supabase
 supabase login
-supabase link --project-ref rkdtmscnaobdsoxoexqw
+supabase link --project-ref IL_TUO_PROJECT_REF
 ```
 
-Poi i segreti e il deploy:
+Poi i segreti. `PUSH_SECRET` è una parola d'ordine che inventi tu: serve
+solo perché il database e la funzione si riconoscano fra loro.
 
 ```bash
 supabase secrets set \
   VAPID_PUBLIC_KEY="la_public_key" \
   VAPID_PRIVATE_KEY="la_private_key" \
-  VAPID_SUBJECT="mailto:tua@email.it"
-
-supabase functions deploy push
+  VAPID_SUBJECT="mailto:tua@email.it" \
+  PUSH_SECRET="una_parola_lunga_a_caso"
 ```
 
-`VAPID_SUBJECT` è un recapito a cui i servizi di notifica possono
-scrivere in caso di problemi: basta un indirizzo email valido.
+E la pubblicazione:
 
-## 5. I due collegamenti
+```bash
+supabase functions deploy push --no-verify-jwt
+```
 
-Il database deve chiamare la funzione quando succede qualcosa. Supabase →
-**Database → Webhooks** → *Create a new hook*, due volte:
+`--no-verify-jwt` serve perché a chiamarla è il database, che non ha una
+sessione utente. Al suo posto la funzione controlla la parola d'ordine, e
+l'unico potere che quella dà è far partire una notifica per una
+prenotazione che esiste già.
 
-**Primo — nuove richieste**
+## 5. Dire al database dove chiamare
 
-| Campo | Valore |
-| --- | --- |
-| Name | `push_nuova_richiesta` |
-| Table | `bookings` |
-| Events | solo **Insert** |
-| Type | Supabase Edge Functions |
-| Edge Function | `push` |
+Esegui `supabase/migrations/0010_push_triggers.sql`, poi, sostituendo i
+due valori:
 
-**Secondo — esiti**
+```sql
+insert into public.private_config (key, value) values
+  ('push_function_url', 'https://IL_TUO_PROJECT_REF.supabase.co/functions/v1/push'),
+  ('push_secret',       'la_stessa_parola_del_passo_4')
+on conflict (key) do update set value = excluded.value;
+```
 
-| Campo | Valore |
-| --- | --- |
-| Name | `push_esito` |
-| Table | `bookings` |
-| Events | solo **Update** |
-| Type | Supabase Edge Functions |
-| Edge Function | `push` |
+L'indirizzo lo trovi anche in **Edge Functions → push**, voce *URL*.
 
-Non servono altri parametri: l'autorizzazione la mette Supabase.
+Questa tabella non è leggibile né dal pubblico né dagli utenti
+autenticati: ci arrivano solo le funzioni interne del database.
+
+Da qui in poi il database chiama la funzione da solo a ogni nuova
+richiesta e a ogni esito. Non servono i Database Webhooks.
 
 ## 6. La prova
 
@@ -104,10 +106,18 @@ Per l'altro verso: registrati come utente normale, attiva le notifiche da
 
 ## Se non arriva
 
-**Database → Webhooks → il collegamento → Logs** mostra ogni chiamata e la
-risposta. Se la chiamata parte ma la notifica non arriva, il problema è
-nella funzione: `supabase functions logs push`.
+`supabase functions logs push` mostra ogni chiamata ricevuta e cosa è
+successo. Se non compare nessuna chiamata, il database non sta chiamando:
+controlla che `private_config` contenga le due righe e che l'indirizzo sia
+quello giusto.
 
-Le cause più comuni sono la chiave pubblica nel database diversa da quella
-usata nei segreti della funzione, e su iPhone il sito non aggiunto alla
-schermata Home.
+```sql
+select key, left(value, 40) from public.private_config;
+```
+
+Un `403` nei log significa che la parola d'ordine nel database e quella
+nei segreti della funzione non coincidono.
+
+Le altre cause comuni sono la chiave pubblica nel database diversa da
+quella usata nei segreti, e su iPhone il sito non aggiunto alla schermata
+Home.

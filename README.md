@@ -117,6 +117,7 @@ incolla per intero, **in ordine**:
 7. `supabase/migrations/0007_coach_cancel.sql` — annullamento di una prova da parte del coach
 8. `supabase/migrations/0008_in_app_notifications.sql` — notifiche dentro l'app
 9. `supabase/migrations/0009_push_notifications.sql` — notifiche push
+10. `supabase/migrations/0010_push_triggers.sql` — inneschi che fanno partire le push
 
 Per sapere quali risultano già applicate:
 `supabase/checks/verifica_migrazioni.sql` risponde con un elenco leggibile e
@@ -237,6 +238,8 @@ progetto di produzione), ognuna su un database pulito:
   coda delle richieste per il coach, presa visione, separazione fra utenti
 - `supabase/tests/push_test.sql` — registrazione dei dispositivi, destinatari di
   ogni evento, isolamento fra utenti, recapiti scaduti
+- `supabase/tests/push_triggers_test.sql` — quando parte una notifica e quando no;
+  richiede un `net.http_post` finto che registri le chiamate invece di farle
 - `supabase/tests/security_test.sql` — chi può leggere e scrivere cosa: verifica
   che un visitatore non veda nessun dato personale, che un utente registrato veda
   soltanto i propri, e che non possa scrivere direttamente nelle tabelle

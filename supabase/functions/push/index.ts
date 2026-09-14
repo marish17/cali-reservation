@@ -1,23 +1,20 @@
 // Funzione di invio delle notifiche push.
 //
-// Viene chiamata dai Database Webhooks di Supabase quando nasce una
-// prenotazione o quando ne cambia lo stato. Sta qui e non nel sito
-// perché spedire richiede una chiave privata, che nel browser sarebbe
-// alla portata di chiunque.
+// La chiama il database quando nasce una prenotazione o quando ne
+// cambia lo stato. Sta qui e non nel sito perché spedire richiede una
+// chiave privata, che nel browser sarebbe alla portata di chiunque.
 //
-// Deploy:  supabase functions deploy push
-// Segreti: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
+// Deploy:  supabase functions deploy push --no-verify-jwt
+// Segreti: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, PUSH_SECRET
+//
+// Il controllo di chi può chiamarla è la parola d'ordine condivisa col
+// database: l'unico potere che dà è far partire una notifica per una
+// prenotazione che esiste già.
 
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-type Booking = { id: string; status: string };
-type WebhookPayload = {
-  type: "INSERT" | "UPDATE" | "DELETE";
-  table: string;
-  record: Booking | null;
-  old_record: Booking | null;
-};
+type Payload = { booking_id?: string; audience?: string };
 
 type Target = {
   endpoint: string;
@@ -40,44 +37,30 @@ webpush.setVapidDetails(
   Deno.env.get("VAPID_PRIVATE_KEY") ?? ""
 );
 
-/** Chi va avvisato, in base a cosa è successo alla prenotazione. */
-function audienceFor(payload: WebhookPayload): "coaches" | "booker" | null {
-  if (payload.table !== "bookings" || !payload.record) return null;
-
-  if (payload.type === "INSERT") {
-    return payload.record.status === "pending" ? "coaches" : null;
-  }
-
-  if (payload.type === "UPDATE") {
-    const before = payload.old_record?.status;
-    const after = payload.record.status;
-    if (before === after) return null;
-    // L'utente che disdice da solo sa già di averlo fatto.
-    return ["approved", "rejected", "cancelled"].includes(after) ? "booker" : null;
-  }
-
-  return null;
-}
-
 Deno.serve(async (request) => {
   if (request.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  let payload: WebhookPayload;
+  const expected = Deno.env.get("PUSH_SECRET") ?? "";
+  if (!expected || request.headers.get("x-push-secret") !== expected) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  let payload: Payload;
   try {
     payload = await request.json();
   } catch {
     return new Response("Bad request", { status: 400 });
   }
 
-  const audience = audienceFor(payload);
-  if (!audience || !payload.record) {
+  const audience = payload.audience;
+  if (!payload.booking_id || (audience !== "coaches" && audience !== "booker")) {
     return Response.json({ skipped: true });
   }
 
   const { data, error } = await supabase.rpc("push_targets_for_booking", {
-    p_booking_id: payload.record.id,
+    p_booking_id: payload.booking_id,
     p_audience: audience,
   });
 
@@ -102,7 +85,7 @@ Deno.serve(async (request) => {
             title: target.title,
             body: target.body,
             url: target.url,
-            tag: audience === "coaches" ? "richieste" : `esito-${payload.record!.id}`,
+            tag: audience === "coaches" ? "richieste" : `esito-${payload.booking_id}`,
           })
         );
         sent++;
