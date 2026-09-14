@@ -7,6 +7,7 @@ import Logo from "@/components/Logo";
 import { supabase } from "@/lib/supabase";
 import { useCount } from "@/lib/useCount";
 import CountBadge from "@/components/CountBadge";
+import NotificationStatus from "@/components/NotificationStatus";
 
 const NAV = [
   { href: "/admin", label: "Prenotazioni" },
@@ -110,11 +111,14 @@ function AdminChrome({
         <Logo size={32} />
         <h1 className="text-lg font-bold">Area coach</h1>
         <span className="badge">{email}</span>
-        <NotificationToggle />
-        <button className="btn-ghost !px-3 !py-1.5 text-xs" onClick={onSignOut}>
+        <button className="btn-ghost ml-auto !min-h-[36px] !px-3 text-xs" onClick={onSignOut}>
           Esci
         </button>
       </header>
+
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <NotificationStatus />
+      </div>
 
       <nav className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
         {NAV.map((item) => (
@@ -136,29 +140,5 @@ function AdminChrome({
 
       {children}
     </div>
-  );
-}
-
-/**
- * Gli avvisi del browser vanno chiesti con un gesto esplicito: un
- * permesso richiesto al caricamento viene quasi sempre negato.
- */
-function NotificationToggle() {
-  const [state, setState] = useState<NotificationPermission | "unsupported">("default");
-
-  useEffect(() => {
-    setState(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
-  }, []);
-
-  if (state === "unsupported" || state === "granted") return null;
-
-  return (
-    <button
-      className="btn-ghost ml-auto !px-3 !py-1.5 text-xs"
-      onClick={() => void Notification.requestPermission().then(setState)}
-      title="Ricevi un avviso quando arriva una richiesta, senza controllare la pagina"
-    >
-      {state === "denied" ? "Avvisi bloccati" : "Attiva gli avvisi"}
-    </button>
   );
 }

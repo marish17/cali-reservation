@@ -11,6 +11,10 @@ export const metadata: Metadata = {
     icon: "/icon.png",
     apple: "/icon.png",
   },
+  // Serve perché "Aggiungi a Home" produca una vera icona con un nome,
+  // e su iPhone è anche la condizione per ricevere gli avvisi.
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, title: "Academy", statusBarStyle: "black-translucent" },
   openGraph: {
     title: "Prenota la tua prova di Calisthenics",
     description: "Scegli giorno e orario e richiedi la tua lezione di prova.",
