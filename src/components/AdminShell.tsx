@@ -109,6 +109,7 @@ function AdminChrome({
   children: React.ReactNode;
 }) {
   const { count: pending, increased, acknowledge } = useCount("pending_count", 45000);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Avviso del sistema operativo: è l'unico modo, senza email, di
   // accorgersi di una richiesta senza fissare la pagina.
@@ -122,40 +123,124 @@ function AdminChrome({
     });
   }, [increased, pending, acknowledge]);
 
-  return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-10 pt-5">
-      <header className="mb-6 flex flex-wrap items-center gap-3 border-b border-line pb-4">
-        <Logo size={32} />
-        <h1 className="text-lg font-bold">Area coach</h1>
-        <span className="badge">{email}</span>
-        <button className="btn-ghost ml-auto !min-h-[36px] !px-3 text-xs" onClick={onSignOut}>
-          Esci
-        </button>
-      </header>
+  // Cambiando sezione il menu si chiude da solo: restare aperto sopra
+  // la pagina appena scelta è il difetto classico di questi menu.
+  useEffect(() => setMenuOpen(false), [pathname]);
 
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        <PushToggle audience="coach" />
-      </div>
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
 
-      <nav className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-        {NAV.map((item) => (
+  const nav = (
+    <nav className="flex flex-col gap-1">
+      {NAV.map((item) => {
+        const active = pathname === item.href;
+        return (
           <Link
             key={item.href}
             href={item.href}
             className={[
-              "inline-flex min-h-[42px] shrink-0 items-center whitespace-nowrap rounded-xl border px-3.5 text-sm transition active:scale-[0.98]",
-              pathname === item.href
-                ? "border-accent bg-accent/10 text-accentSoft"
-                : "border-line text-slate-300 hover:border-slate-500",
+              "inline-flex min-h-[46px] items-center rounded-xl px-3.5 text-sm transition",
+              active
+                ? "bg-accent/12 font-semibold text-accentSoft"
+                : "text-slate-300 hover:bg-white/5 hover:text-white",
             ].join(" ")}
           >
             {item.label}
             {item.href === "/admin" && <CountBadge count={pending} />}
           </Link>
-        ))}
-      </nav>
+        );
+      })}
+    </nav>
+  );
 
-      {children}
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-4">
+      <header className="mb-5 flex items-center gap-3 border-b border-line pb-3">
+        <button
+          className="btn-ghost !min-h-[40px] !w-11 !px-0 lg:hidden"
+          aria-label="Apri il menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(true)}
+        >
+          <MenuIcon />
+        </button>
+
+        <Logo size={32} />
+        <h1 className="text-base font-bold sm:text-lg">Area coach</h1>
+
+        {/* Il numero resta visibile anche a menu chiuso: per sapere che
+            c'è da lavorare non si deve aprire niente. */}
+        <span className="lg:hidden">
+          <CountBadge count={pending} />
+        </span>
+
+        <button className="btn-ghost ml-auto !min-h-[36px] !px-3 text-xs" onClick={onSignOut}>
+          Esci
+        </button>
+      </header>
+
+      <div className="lg:grid lg:grid-cols-[210px_1fr] lg:gap-8">
+        {/* Sul computer c'è spazio: la colonna resta sempre aperta. */}
+        <aside className="hidden lg:block">
+          {nav}
+          <div className="mt-5 border-t border-line pt-4">
+            <p className="mb-2 truncate text-[11px] text-slate-500">{email}</p>
+            <PushToggle audience="coach" />
+          </div>
+        </aside>
+
+        <div>
+          <div className="mb-5 lg:hidden">
+            <PushToggle audience="coach" />
+          </div>
+          {children}
+        </div>
+      </div>
+
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            className="absolute inset-0 bg-black/70"
+            aria-label="Chiudi il menu"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col border-r border-line bg-surface p-4 shadow-2xl">
+            <div className="mb-4 flex items-center gap-3 border-b border-line pb-3">
+              <Logo size={30} />
+              <span className="text-sm font-bold">Area coach</span>
+              <button
+                className="btn-ghost ml-auto !min-h-[36px] !w-10 !px-0"
+                aria-label="Chiudi il menu"
+                onClick={() => setMenuOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {nav}
+
+            <p className="mt-auto truncate pt-4 text-[11px] text-slate-500">{email}</p>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M1 1h16M1 7h16M1 13h16" />
+      </g>
+    </svg>
   );
 }
