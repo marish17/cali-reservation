@@ -124,3 +124,61 @@ export type AssessmentRow = {
   value: number;
   unit: ExerciseUnit;
 };
+
+export type WorkoutSummary = {
+  id: string;
+  name: string;
+  status: "active" | "archived" | "template";
+  days: number;
+  coach_id: string | null;
+  updated_at: string;
+};
+
+export type WorkoutRow = {
+  workout_id: string;
+  name: string;
+  intro: string | null;
+  status?: "active" | "archived" | "template";
+  student_id?: string | null;
+  coach_id?: string | null;
+  updated_at: string;
+  day_id: string | null;
+  day_position: number | null;
+  title: string | null;
+  body: string | null;
+  note: string | null;
+};
+
+export type WorkoutDay = {
+  day_id: string | null;
+  title: string;
+  body: string;
+  note: string | null;
+};
+
+/** Le righe piatte che tornano dal database, rimesse in forma di scheda. */
+export function toWorkout(rows: WorkoutRow[]): {
+  id: string;
+  name: string;
+  intro: string | null;
+  updatedAt: string;
+  days: WorkoutDay[];
+} | null {
+  if (rows.length === 0) return null;
+  const first = rows[0];
+  return {
+    id: first.workout_id,
+    name: first.name,
+    intro: first.intro,
+    updatedAt: first.updated_at,
+    days: rows
+      .filter((r) => r.day_id !== null)
+      .sort((a, b) => (a.day_position ?? 0) - (b.day_position ?? 0))
+      .map((r) => ({
+        day_id: r.day_id,
+        title: r.title ?? "",
+        body: r.body ?? "",
+        note: r.note,
+      })),
+  };
+}

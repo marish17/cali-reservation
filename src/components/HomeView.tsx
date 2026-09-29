@@ -1,20 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import BookingFlow from "@/components/BookingFlow";
 import InstallHint from "@/components/InstallHint";
+import MyBookings from "@/components/MyBookings";
+import MyWorkout from "@/components/MyWorkout";
 import SetupNotice from "@/components/SetupNotice";
 import TopBar from "@/components/TopBar";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { useSession } from "@/lib/useSession";
+import { toISODate } from "@/lib/date";
 import type { PublicSettings } from "@/lib/types";
+
+type View = "scheda" | "richieste" | "prenota";
 
 /**
  * I testi arrivano dal database mentre la pagina è già a schermo: il
  * sito resta un pacchetto di file statici, senza un server acceso a
  * ricostruirlo a ogni visita.
+ *
+ * Quello che si vede aprendo il sito dipende da chi sei. Chi si allena
+ * già vuole la sua scheda, chi ha una prova in sospeso vuole sapere
+ * com'è andata, chi non ha nulla vuole prenotare. Mostrare a tutti il
+ * calendario significa dare torto a due su tre.
  */
 export default function HomeView() {
   const [settings, setSettings] = useState<PublicSettings | null>(null);
+  const { session, loading: sessionLoading } = useSession();
+  const [view, setView] = useState<View | null>(null);
+  const [has, setHas] = useState<{ workout: boolean; bookings: boolean }>({
+    workout: false,
+    bookings: false,
+  });
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -24,23 +41,78 @@ export default function HomeView() {
     })();
   }, []);
 
+  const decide = useCallback(async () => {
+    if (!session) {
+      setView("prenota");
+      setHas({ workout: false, bookings: false });
+      return;
+    }
+
+    const [w, b] = await Promise.all([
+      supabase.rpc("get_my_workout"),
+      supabase
+        .from("bookings")
+        .select("id, status, day")
+        .gte("day", toISODate(new Date()))
+        .in("status", ["pending", "approved"]),
+    ]);
+
+    const workout = ((w.data as unknown[]) ?? []).length > 0;
+    const bookings = ((b.data as unknown[]) ?? []).length > 0;
+    setHas({ workout, bookings });
+    setView(workout ? "scheda" : bookings ? "richieste" : "prenota");
+  }, [session]);
+
+  useEffect(() => {
+    if (sessionLoading) return;
+    void decide();
+  }, [sessionLoading, decide]);
+
+  const gymName = settings?.gym_name ?? "Calisthenics Academy";
+
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-10 pt-3 sm:pb-16 sm:pt-6">
-      <TopBar gymName={settings?.gym_name ?? "Calisthenics Academy"} />
+      <TopBar gymName={gymName} />
 
-      <header className="mb-6 sm:mb-8">
-        <h1 className="text-[26px] font-bold leading-[1.15] sm:text-4xl">
-          Prenota la tua prova gratuita
-        </h1>
-        <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-slate-400">
-          {settings?.intro_text ??
-            "Scegli il giorno e l'orario in cui il coach è presente. Bastano trenta secondi."}
-        </p>
-      </header>
+      {!isSupabaseConfigured ? (
+        <SetupNotice />
+      ) : view === null ? (
+        <p className="text-sm text-slate-400">Caricamento…</p>
+      ) : (
+        <>
+          {view === "prenota" && (
+            <header className="mb-6 sm:mb-8">
+              <h1 className="text-[26px] font-bold leading-[1.15] sm:text-4xl">
+                Prenota la tua prova gratuita
+              </h1>
+              <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-slate-400">
+                {settings?.intro_text ??
+                  "Scegli il giorno e l'orario in cui il coach è presente. Bastano trenta secondi."}
+              </p>
+            </header>
+          )}
 
-      <InstallHint />
+          {view === "prenota" && <InstallHint />}
 
-      {isSupabaseConfigured ? <BookingFlow /> : <SetupNotice />}
+          {/* Le altre sezioni restano raggiungibili: la scelta di
+              partenza è un'ipotesi, non una gabbia. */}
+          {session && (has.workout || has.bookings) && (
+            <nav className="mb-5 flex gap-2">
+              {has.workout && (
+                <Tab label="Scheda" on={view === "scheda"} onClick={() => setView("scheda")} />
+              )}
+              <Tab label="Richieste" on={view === "richieste"} onClick={() => setView("richieste")} />
+              <Tab label="Prenota" on={view === "prenota"} onClick={() => setView("prenota")} />
+            </nav>
+          )}
+
+          {view === "scheda" && (
+            <MyWorkout onEmpty={() => setView(has.bookings ? "richieste" : "prenota")} />
+          )}
+          {view === "richieste" && <MyBookings />}
+          {view === "prenota" && <BookingFlow />}
+        </>
+      )}
 
       <footer className="mt-10 border-t border-line pt-4 text-xs text-slate-500">
         {(settings?.contact_email || settings?.contact_phone) && (
@@ -59,5 +131,22 @@ export default function HomeView() {
         </div>
       </footer>
     </main>
+  );
+}
+
+function Tab({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={on}
+      className={[
+        "min-h-[42px] flex-1 truncate rounded-xl border px-2.5 text-sm transition active:scale-[0.98]",
+        on
+          ? "border-accent/50 bg-accent/12 font-semibold text-accentSoft"
+          : "border-line text-slate-300 hover:bg-white/5",
+      ].join(" ")}
+    >
+      {label}
+    </button>
   );
 }

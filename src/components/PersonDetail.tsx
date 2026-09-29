@@ -4,10 +4,11 @@ import { useState } from "react";
 import Avatar from "@/components/Avatar";
 import IntakeForm from "@/components/IntakeForm";
 import AssessmentPanel from "@/components/AssessmentPanel";
+import WorkoutPanel from "@/components/WorkoutPanel";
 import { supabase } from "@/lib/supabase";
 import type { Coach, Person } from "@/lib/types";
 
-type Tab = "questionario" | "valutazioni";
+type Tab = "scheda" | "questionario" | "valutazioni";
 
 export default function PersonDetail({
   person,
@@ -20,7 +21,7 @@ export default function PersonDetail({
   onBack: () => void;
   onChanged: () => void | Promise<void>;
 }) {
-  const [tab, setTab] = useState<Tab>("questionario");
+  const [tab, setTab] = useState<Tab>("scheda");
   const [coachId, setCoachId] = useState(person.coach_id ?? "");
   const [saving, setSaving] = useState(false);
 
@@ -85,7 +86,7 @@ export default function PersonDetail({
       </section>
 
       <div className="flex gap-2">
-        {(["questionario", "valutazioni"] as Tab[]).map((t) => (
+        {(["scheda", "questionario", "valutazioni"] as Tab[]).map((t) => (
           <button
             key={t}
             className={[
@@ -101,11 +102,11 @@ export default function PersonDetail({
         ))}
       </div>
 
-      {tab === "questionario" ? (
-        <IntakeForm userId={person.user_id} onSaved={onChanged} />
-      ) : (
-        <AssessmentPanel userId={person.user_id} />
+      {tab === "scheda" && (
+        <WorkoutPanel userId={person.user_id} coachId={coachId || null} />
       )}
+      {tab === "questionario" && <IntakeForm userId={person.user_id} onSaved={onChanged} />}
+      {tab === "valutazioni" && <AssessmentPanel userId={person.user_id} />}
     </div>
   );
 }
