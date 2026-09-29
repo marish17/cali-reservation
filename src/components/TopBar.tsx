@@ -27,14 +27,29 @@ export default function TopBar({ gymName }: { gymName: string }) {
           </span>
         </Link>
 
-        <Link
-          href="/le-mie-prenotazioni"
-          className="ml-auto inline-flex min-h-[38px] shrink-0 items-center rounded-xl border border-line px-3 text-xs font-medium text-slate-200 transition active:scale-[0.98] hover:border-slate-500 hover:bg-white/5"
-        >
-          <span className="hidden xs:inline">Le mie richieste</span>
-          <span className="xs:hidden">Richieste</span>
-          {session && <MyUpdatesBadge />}
-        </Link>
+        {/* Sloggato il bottone dice l'azione, non la destinazione: chi
+            non è ancora entrato non ha "richieste" e quella parola non
+            gli dice dove andare. */}
+        {session ? (
+          <Link
+            href="/le-mie-prenotazioni"
+            className="ml-auto inline-flex min-h-[38px] shrink-0 items-center rounded-xl border border-line px-3 text-xs font-medium text-slate-200 transition active:scale-[0.98] hover:border-slate-500 hover:bg-white/5"
+          >
+            <span className="hidden xs:inline">Le mie richieste</span>
+            <span className="xs:hidden">Richieste</span>
+            <MyUpdatesBadge />
+          </Link>
+        ) : (
+          // Bordato e non rosso: chi arriva nuovo deve sentire come
+          // azione principale la prenotazione, non l'accesso. La parola
+          // giusta basta a farsi trovare da chi cerca la sua scheda.
+          <Link
+            href="/accedi"
+            className="ml-auto inline-flex min-h-[38px] shrink-0 items-center rounded-xl border border-line px-4 text-xs font-medium text-slate-200 transition active:scale-[0.98] hover:border-slate-500 hover:bg-white/5"
+          >
+            Accedi
+          </Link>
+        )}
       </div>
 
       {session && <SessionRow email={session.user.email ?? null} />}

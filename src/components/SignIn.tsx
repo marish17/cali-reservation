@@ -13,12 +13,18 @@ export default function SignIn({
   title = "Accedi per continuare",
   description,
   onBeforeSubmit,
+  // Da dove si arriva cambia cosa si sta per fare. Chi prenota una
+  // prova un account non ce l'ha; chi tocca "Accedi" quasi sempre sì, e
+  // presentargli "Crea l'account" lo porta a farsene un secondo,
+  // perdendo scheda e storico.
+  initialMode = "signup",
 }: {
   title?: string;
   description?: string;
   onBeforeSubmit?: () => void;
+  initialMode?: Mode;
 }) {
-  const [mode, setMode] = useState<Mode>("signup");
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);

@@ -71,6 +71,7 @@ export default function MyBookings() {
     return (
       <div className="card">
         <SignIn
+          initialMode="signin"
           title="Accedi per vedere le tue richieste"
           description="Con la stessa email e password usate per prenotare."
         />

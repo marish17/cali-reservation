@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import BookingFlow from "@/components/BookingFlow";
 import InstallHint from "@/components/InstallHint";
 import MyBookings from "@/components/MyBookings";
@@ -89,6 +90,20 @@ export default function HomeView() {
                 {settings?.intro_text ??
                   "Scegli il giorno e l'orario in cui il coach è presente. Bastano trenta secondi."}
               </p>
+              {/* La parola "scheda" deve comparire prima che uno la debba
+                  indovinare: è quello che cerca chi si allena già. */}
+              {!session && (
+                <p className="mt-3 text-sm text-slate-400">
+                  Ti alleni già da noi?{" "}
+                  <Link
+                    href="/accedi"
+                    className="text-accentSoft underline underline-offset-4"
+                  >
+                    Accedi per vedere la tua scheda
+                  </Link>
+                  .
+                </p>
+              )}
             </header>
           )}
 
