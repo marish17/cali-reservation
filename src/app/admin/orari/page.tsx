@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { WEEKDAYS } from "@/lib/date";
 import { formatTime } from "@/lib/date";
+import CoachAbsences from "@/components/CoachAbsences";
+import CoachAccount from "@/components/CoachAccount";
 import type { Coach, WeeklySlot } from "@/lib/types";
 
 export default function AdminSchedulePage() {
@@ -219,6 +221,12 @@ function CoachCard({
           </div>
         ))}
       </div>
+
+      <div className="mt-4 border-t border-line pt-4">
+        <CoachAccount coachId={coach.id} userId={coach.user_id} onChanged={onChanged} />
+      </div>
+
+      <CoachAbsences coachId={coach.id} />
 
       <form className="mt-4 flex flex-wrap items-end gap-2 border-t border-line pt-4" onSubmit={addSlot}>
         <div>

@@ -79,6 +79,7 @@ mano non può aggirarle.
 | Soglia sotto cui serve un accompagnatore | `/admin/impostazioni` → *Accompagnatore obbligatorio sotto i* |
 | Posti per singola fascia oraria | `/admin/orari` → colonna *posti* della fascia |
 | Presenza del coach | `/admin/orari` → fasce ricorrenti per giorno della settimana |
+| Assenza di un singolo coach | `/admin/orari` → *Segna un'assenza*, per un giorno o un periodo |
 | Chiusure e festività | `/admin/chiusure` |
 | Quanto in anticipo si può prenotare | `/admin/impostazioni` → *Giorni prenotabili in anticipo* |
 | Preavviso minimo prima dell'inizio | `/admin/impostazioni` → *Preavviso minimo (ore)* |
@@ -119,6 +120,7 @@ incolla per intero, **in ordine**:
 9. `supabase/migrations/0009_push_notifications.sql` — notifiche push
 10. `supabase/migrations/0010_push_triggers.sql` — inneschi che fanno partire le push
 11. `supabase/migrations/0011_public_settings_vapid.sql` — la chiave delle push arriva al browser
+12. `supabase/migrations/0012_coach_accounts_absences.sql` — coach collegati agli account, assenze
 
 Per sapere quali risultano già applicate:
 `supabase/checks/verifica_migrazioni.sql` risponde con un elenco leggibile e
@@ -241,6 +243,8 @@ progetto di produzione), ognuna su un database pulito:
   ogni evento, isolamento fra utenti, recapiti scaduti
 - `supabase/tests/push_triggers_test.sql` — quando parte una notifica e quando no;
   richiede un `net.http_post` finto che registri le chiamate invece di farle
+- `supabase/tests/coach_absences_test.sql` — collegamento coach/account, assenze che
+  tolgono solo le fasce di quel coach, prenotazioni esistenti mai toccate
 - `supabase/tests/security_test.sql` — chi può leggere e scrivere cosa: verifica
   che un visitatore non veda nessun dato personale, che un utente registrato veda
   soltanto i propri, e che non possa scrivere direttamente nelle tabelle

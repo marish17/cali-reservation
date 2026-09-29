@@ -30,6 +30,7 @@ export type Coach = {
   id: string;
   name: string;
   active: boolean;
+  user_id: string | null;
 };
 
 export type WeeklySlot = {
