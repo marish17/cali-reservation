@@ -27,7 +27,7 @@ $$;
 
 \echo '== 1. senza sessione -> atteso NOT_AUTHENTICATED =='
 do $$ begin
-  perform request_trial((select slot_id from sl),(select day from d),'Anna Rossi',born(30),'3331112222');
+  perform request_trial((select slot_id from sl),(select day from d),'Anna Rossi',born(30),'3331112222',true);
   raise exception 'FALLITO: prenotazione senza account';
 exception when others then
   if sqlerrm like '%NOT_AUTHENTICATED%' then raise notice 'OK: %', sqlerrm; else raise; end if;
@@ -35,7 +35,7 @@ end $$;
 
 \echo '== 2. utente autenticato -> richiesta in attesa =='
 set test.uid = '11111111-1111-1111-1111-111111111111';
-select rt.status, rt.age from request_trial((select slot_id from sl),(select day from d),'Anna Rossi',born(30),'3331112222') rt;
+select rt.status, rt.age from request_trial((select slot_id from sl),(select day from d),'Anna Rossi',born(30),'3331112222',true) rt;
 
 \echo '== 3. il profilo viene salvato per la volta successiva =='
 select full_name, phone, email from profiles where user_id = '11111111-1111-1111-1111-111111111111';
@@ -46,7 +46,7 @@ from get_availability((select day from d),(select day from d)) ga;
 
 \echo '== 5. stesso utente, stesso giorno -> atteso ALREADY_BOOKED =='
 do $$ begin
-  perform request_trial((select slot_id from sl),(select day from d),'Anna Rossi',born(30),'3331112222');
+  perform request_trial((select slot_id from sl),(select day from d),'Anna Rossi',born(30),'3331112222',true);
   raise exception 'FALLITO: due richieste attive nello stesso giorno';
 exception when others then
   if sqlerrm like '%ALREADY_BOOKED%' then raise notice 'OK: %', sqlerrm; else raise; end if;
@@ -54,10 +54,10 @@ end $$;
 
 \echo '== 6. secondo utente riempie lo slot, il terzo trova SLOT_FULL =='
 set test.uid = '22222222-2222-2222-2222-222222222222';
-select rt.status from request_trial((select slot_id from sl),(select day from d),'Bruno Verdi',born(25),'3331112223') rt;
+select rt.status from request_trial((select slot_id from sl),(select day from d),'Bruno Verdi',born(25),'3331112223',true) rt;
 set test.uid = '33333333-3333-3333-3333-333333333333';
 do $$ begin
-  perform request_trial((select slot_id from sl),(select day from d),'Carla Blu',born(22),'3331112224');
+  perform request_trial((select slot_id from sl),(select day from d),'Carla Blu',born(22),'3331112224',true);
   raise exception 'FALLITO: superata la capienza con richieste in attesa';
 exception when others then
   if sqlerrm like '%SLOT_FULL%' then raise notice 'OK: %', sqlerrm; else raise; end if;
@@ -86,7 +86,7 @@ select ga.booked, ga.remaining from get_availability((select day from d),(select
 
 \echo '== 10. dopo il rifiuto il terzo utente riesce a prenotare =='
 set test.uid = '33333333-3333-3333-3333-333333333333';
-select rt.status from request_trial((select slot_id from sl),(select day from d),'Carla Blu',born(22),'3331112224') rt;
+select rt.status from request_trial((select slot_id from sl),(select day from d),'Carla Blu',born(22),'3331112224',true) rt;
 
 \echo '== 11. stato non valido -> atteso INVALID_STATUS =='
 set test.uid = '99999999-9999-9999-9999-999999999999';
@@ -112,7 +112,7 @@ end $$;
 \echo '== 14. minore senza accompagnatore -> atteso GUARDIAN_REQUIRED =='
 set test.uid = '33333333-3333-3333-3333-333333333333';
 do $$ begin
-  perform request_trial((select slot_id from sl),(select day from d) + 1,'Dino Neri',born(12),'3331112225');
+  perform request_trial((select slot_id from sl),(select day from d) + 1,'Dino Neri',born(12),'3331112225',true);
   raise exception 'FALLITO: minore senza accompagnatore';
 exception when others then
   if sqlerrm like '%GUARDIAN_REQUIRED%' then raise notice 'OK: %', sqlerrm; else raise; end if;

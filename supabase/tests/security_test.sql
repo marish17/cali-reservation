@@ -25,12 +25,12 @@ grant select on test_ctx to anon, authenticated;
 set test.uid = '11111111-1111-1111-1111-111111111111';
 set role authenticated;
 select 1 from request_trial((select slot_id from test_ctx),(select day from test_ctx),'Anna Rossi',
-  ((select day from test_ctx) - interval '30 years')::date,'3331112222');
+  ((select day from test_ctx) - interval '30 years')::date,'3331112222',true);
 reset role;
 set test.uid = '22222222-2222-2222-2222-222222222222';
 set role authenticated;
 select 1 from request_trial((select slot_id from test_ctx),(select day from test_ctx),'Bruno Verdi',
-  ((select day from test_ctx) - interval '25 years')::date,'3331112223');
+  ((select day from test_ctx) - interval '25 years')::date,'3331112223',true);
 reset role;
 
 \echo ''
