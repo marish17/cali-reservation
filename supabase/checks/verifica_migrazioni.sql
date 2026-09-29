@@ -65,6 +65,12 @@ with esiti as (
   -- Senza questa in Allievi vedi indirizzi email invece di nomi.
   select '0016 — nome e cognome nell''elenco',
          to_regprocedure('public.set_my_name(text)') is not null
+  union all
+  -- Senza questa non puoi iscrivere un allievo né archiviarlo, e
+  -- nessuno vede gli orari del proprio coach.
+  select '0017 — iscritti, archivio, password',
+         to_regprocedure('public.get_my_membership()') is not null
+     and to_regclass('public.password_resets') is not null
 )
 select migrazione,
        case when applicata then 'sì' else 'DA FARE' end as applicata

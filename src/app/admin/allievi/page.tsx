@@ -20,6 +20,7 @@ function People() {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [query, setQuery] = useState("");
   const [onlyStudents, setOnlyStudents] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,11 +44,14 @@ function People() {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return people.filter((p) => {
+      if (!showArchived && !p.active) return false;
       if (onlyStudents && !p.is_student) return false;
       if (!q) return true;
       return `${p.display_name ?? ""} ${p.email ?? ""}`.toLowerCase().includes(q);
     });
-  }, [people, query, onlyStudents]);
+  }, [people, query, onlyStudents, showArchived]);
+
+  const archived = people.filter((p) => !p.active).length;
 
   const current = people.find((p) => p.user_id === selected) ?? null;
 
@@ -90,6 +94,18 @@ function People() {
           />
           Solo allievi
         </label>
+
+        {archived > 0 && (
+          <label className="mt-2 flex items-center gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              className="h-5 w-5 shrink-0 accent-accent"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+            />
+            Mostra anche gli archiviati ({archived})
+          </label>
+        )}
       </section>
 
       {error && <p className="text-sm text-red-200">{error}</p>}
@@ -112,8 +128,20 @@ function People() {
                 <span className="min-w-0 flex-1">
                   {/* Il nome per primo e in grande: è così che il coach
                       cerca una persona, non per indirizzo email. */}
-                  <span className="block truncate text-[15px] font-semibold">
-                    {p.display_name || p.email || "Senza nome"}
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-[15px] font-semibold">
+                      {p.display_name || p.email || "Senza nome"}
+                    </span>
+                    {p.enrolled && (
+                      <span className="shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accentSoft">
+                        iscritto
+                      </span>
+                    )}
+                    {!p.active && (
+                      <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+                        archiviato
+                      </span>
+                    )}
                   </span>
                   {p.display_name && p.email && (
                     <span className="block truncate text-xs text-slate-500">{p.email}</span>

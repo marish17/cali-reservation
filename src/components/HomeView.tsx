@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import BookingFlow from "@/components/BookingFlow";
+import CoachHours from "@/components/CoachHours";
 import InstallHint from "@/components/InstallHint";
 import MyBookings from "@/components/MyBookings";
 import MyWorkout from "@/components/MyWorkout";
@@ -11,7 +12,7 @@ import TopBar from "@/components/TopBar";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useSession } from "@/lib/useSession";
 import { toISODate } from "@/lib/date";
-import type { PublicSettings } from "@/lib/types";
+import type { Membership, PublicSettings } from "@/lib/types";
 
 type View = "scheda" | "richieste" | "prenota";
 
@@ -36,6 +37,7 @@ export default function HomeView() {
   // Chi si registra senza prenotare non passa dal modulo che chiede il
   // nome: al coach arriverebbe un indirizzo email e basta.
   const [needsName, setNeedsName] = useState(false);
+  const [me, setMe] = useState<Membership | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -50,10 +52,11 @@ export default function HomeView() {
       setView("prenota");
       setHas({ workout: false, bookings: false });
       setNeedsName(false);
+      setMe(null);
       return;
     }
 
-    const [w, b, p] = await Promise.all([
+    const [w, b, p, m] = await Promise.all([
       supabase.rpc("get_my_workout"),
       supabase
         .from("bookings")
@@ -61,13 +64,23 @@ export default function HomeView() {
         .gte("day", toISODate(new Date()))
         .in("status", ["pending", "approved"]),
       supabase.rpc("get_my_profile"),
+      supabase.rpc("get_my_membership"),
     ]);
 
     const workout = ((w.data as unknown[]) ?? []).length > 0;
     const bookings = ((b.data as unknown[]) ?? []).length > 0;
     const profile = ((p.data as { display_name: string | null }[]) ?? [])[0];
+    const membership = ((m.data as Membership[]) ?? [])[0] ?? null;
     setNeedsName(!profile?.display_name);
+    setMe(membership);
     setHas({ workout, bookings });
+
+    // Chi è iscritto la prova non la fa: il calendario e le richieste
+    // non esistono proprio per lui.
+    if (membership?.enrolled) {
+      setView("scheda");
+      return;
+    }
     setView(workout ? "scheda" : bookings ? "richieste" : "prenota");
   }, [session]);
 
@@ -80,7 +93,7 @@ export default function HomeView() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-10 pt-3 sm:pb-16 sm:pt-6">
-      <TopBar gymName={gymName} />
+      <TopBar gymName={gymName} hideRequests={me?.enrolled ?? false} />
 
       {!isSupabaseConfigured ? (
         <SetupNotice />
@@ -114,10 +127,40 @@ export default function HomeView() {
             </header>
           )}
 
+          {/* Una password messa dal coach la conosce anche il coach:
+              finché resta, l'avviso resta. */}
+          {me?.password_reset_at && (
+            <section className="card mb-5 border-accent/45">
+              <h2 className="text-base font-semibold text-white">Cambia la password</h2>
+              <p className="mt-1.5 text-sm text-slate-300">
+                Quella che stai usando te l&apos;ha data un coach, quindi la
+                conosce anche lui. Scegline una tua.
+              </p>
+              <Link href="/profilo" className="btn-primary mt-3">
+                Cambia la password
+              </Link>
+            </section>
+          )}
+
+          {/* Iscritto e senza scheda: non è un equivoco da spiegare, è
+              solo una scheda che il coach non ha ancora scritto. */}
+          {me?.enrolled && !has.workout && (
+            <section className="card mb-5">
+              <h2 className="text-base font-semibold text-white">
+                La tua scheda non è ancora pronta
+              </h2>
+              <p className="mt-1.5 text-sm text-slate-300">
+                {me.coach_name
+                  ? `Te la scrive ${me.coach_name}: la trovi qui appena è pronta.`
+                  : "Te la scrive il tuo coach: la trovi qui appena è pronta."}
+              </p>
+            </section>
+          )}
+
           {/* Registrato, ma senza scheda e senza prove: è chi si allena
               già da noi e si è fatto l'account per i servizi. Mandarlo
               dritto al calendario delle prove sarebbe un equivoco. */}
-          {session && view === "prenota" && !has.workout && !has.bookings && (
+          {session && !me?.enrolled && view === "prenota" && !has.workout && !has.bookings && (
             <section className="card mb-5 border-accent/35">
               <h2 className="text-base font-semibold text-white">
                 Non hai ancora una scheda
@@ -144,8 +187,9 @@ export default function HomeView() {
           {view === "prenota" && <InstallHint />}
 
           {/* Le altre sezioni restano raggiungibili: la scelta di
-              partenza è un'ipotesi, non una gabbia. */}
-          {session && (has.workout || has.bookings) && (
+              partenza è un'ipotesi, non una gabbia. Per chi è iscritto
+              invece non è un'ipotesi: le prove non lo riguardano. */}
+          {session && !me?.enrolled && (has.workout || has.bookings) && (
             <nav className="mb-5 flex gap-2">
               {has.workout && (
                 <Tab label="Scheda" on={view === "scheda"} onClick={() => setView("scheda")} />
@@ -156,10 +200,24 @@ export default function HomeView() {
           )}
 
           {view === "scheda" && (
-            <MyWorkout onEmpty={() => setView(has.bookings ? "richieste" : "prenota")} />
+            <MyWorkout
+              // Un iscritto senza scheda resta dov'è: il calendario
+              // delle prove per lui non è un ripiego, è un errore.
+              onEmpty={
+                me?.enrolled
+                  ? undefined
+                  : () => setView(has.bookings ? "richieste" : "prenota")
+              }
+            />
           )}
           {view === "richieste" && <MyBookings />}
           {view === "prenota" && <BookingFlow />}
+
+          {me?.enrolled && (
+            <div className="mt-4">
+              <CoachHours />
+            </div>
+          )}
         </>
       )}
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
+import ChangePassword from "@/components/ChangePassword";
 import SignIn from "@/components/SignIn";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/lib/useSession";
@@ -182,6 +183,17 @@ export default function ProfileView() {
             {status === "saved" && <span className="text-sm text-accentSoft">Profilo salvato.</span>}
           </div>
         </form>
+      )}
+
+      {session && (
+        <section className="card mt-5">
+          <h2 className="text-base font-semibold">Password</h2>
+          <p className="mb-4 mt-1 text-sm text-slate-400">
+            Se te ne ha data una provvisoria un coach, cambiala qui: finché
+            non lo fai, quella password la conosce anche lui.
+          </p>
+          <ChangePassword />
+        </section>
       )}
     </main>
   );

@@ -14,7 +14,15 @@ import Avatar from "@/components/Avatar";
  * mentre si scorre il modulo: è l'unico punto da cui si raggiungono le
  * proprie richieste, e in fondo alla pagina non lo troverebbe nessuno.
  */
-export default function TopBar({ gymName }: { gymName: string }) {
+export default function TopBar({
+  gymName,
+  // Chi è iscritto le prove non le richiede: quel pulsante lo
+  // porterebbe a una pagina che per lui è sempre vuota.
+  hideRequests = false,
+}: {
+  gymName: string;
+  hideRequests?: boolean;
+}) {
   const { session } = useSession();
 
   return (
@@ -30,7 +38,7 @@ export default function TopBar({ gymName }: { gymName: string }) {
         {/* Sloggato il bottone dice l'azione, non la destinazione: chi
             non è ancora entrato non ha "richieste" e quella parola non
             gli dice dove andare. */}
-        {session ? (
+        {session && hideRequests ? null : session ? (
           <Link
             href="/le-mie-prenotazioni"
             className="ml-auto inline-flex min-h-[38px] shrink-0 items-center rounded-xl border border-line px-3 text-xs font-medium text-slate-200 transition active:scale-[0.98] hover:border-slate-500 hover:bg-white/5"

@@ -107,6 +107,35 @@ export type Person = {
   coach_id: string | null;
   intake_updated_at: string | null;
   last_booking: string | null;
+  /** Iscritto: niente prove né richieste, solo scheda e orari. */
+  enrolled: boolean;
+  /** Archiviato = false: resta tutto, esce dall'elenco attivo. */
+  active: boolean;
+  /** Ha le chiavi del pannello: non si cancella e non si reimposta da qui. */
+  is_coach: boolean;
+  has_workout: boolean;
+};
+
+export type Membership = {
+  enrolled: boolean;
+  coach_id: string | null;
+  coach_name: string | null;
+  has_workout: boolean;
+  password_reset_at: string | null;
+};
+
+export type CoachHour = {
+  coach_name: string;
+  weekday: number;
+  start_time: string;
+  end_time: string;
+};
+
+export type CoachAbsence = {
+  coach_name: string;
+  from_day: string;
+  to_day: string;
+  reason: string | null;
 };
 
 export type IntakeAnswer = {
