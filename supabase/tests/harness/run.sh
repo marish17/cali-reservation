@@ -51,8 +51,8 @@ for t in "${TESTS[@]}"; do
   psql -U postgres -d postgres -q -c 'drop database if exists app' -c 'create database app'
   psql -U postgres -d app -v ON_ERROR_STOP=1 -q -f "$HERE/stubs.sql" >/dev/null
   for m in "$REPO"/supabase/migrations/*.sql; do
-    psql -U postgres -d app -v ON_ERROR_STOP=1 -q -f "$m" >/dev/null 2>&1 \
-      || { echo "MIGRAZIONE FALLITA: $m"; exit 1; }
+    mout=$(psql -U postgres -d app -v ON_ERROR_STOP=1 -q -f "$m" 2>&1) \
+      || { echo "MIGRAZIONE FALLITA: $m"; echo "$mout" | grep -v "does not exist, skipping" | tail -10; exit 1; }
   done
   out=$(psql -U postgres -d app -v ON_ERROR_STOP=1 -f "$t" 2>&1) || true
   if echo "$out" | grep -qE "TUTTI I TEST SUPERATI|== FINE =="; then

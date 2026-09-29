@@ -56,6 +56,11 @@ with esiti as (
   select '0014 — allievi, questionario e valutazioni',
          to_regclass('public.intake_answers') is not null
      and to_regprocedure('public.list_people()') is not null
+  union all
+  -- Senza questa non si possono scrivere né leggere le schede.
+  select '0015 — schede di allenamento',
+         to_regclass('public.workouts') is not null
+     and to_regprocedure('public.get_my_workout()') is not null
 )
 select migrazione,
        case when applicata then 'sì' else 'DA FARE' end as applicata
