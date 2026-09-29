@@ -61,6 +61,10 @@ with esiti as (
   select '0015 — schede di allenamento',
          to_regclass('public.workouts') is not null
      and to_regprocedure('public.get_my_workout()') is not null
+  union all
+  -- Senza questa in Allievi vedi indirizzi email invece di nomi.
+  select '0016 — nome e cognome nell''elenco',
+         to_regprocedure('public.set_my_name(text)') is not null
 )
 select migrazione,
        case when applicata then 'sì' else 'DA FARE' end as applicata

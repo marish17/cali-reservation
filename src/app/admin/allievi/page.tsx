@@ -110,9 +110,14 @@ function People() {
               >
                 <Avatar name={p.display_name} email={p.email} path={p.avatar_path} size={40} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">
+                  {/* Il nome per primo e in grande: è così che il coach
+                      cerca una persona, non per indirizzo email. */}
+                  <span className="block truncate text-[15px] font-semibold">
                     {p.display_name || p.email || "Senza nome"}
                   </span>
+                  {p.display_name && p.email && (
+                    <span className="block truncate text-xs text-slate-500">{p.email}</span>
+                  )}
                   <span className="block truncate text-xs text-slate-400">
                     {p.intake_updated_at
                       ? `Questionario del ${formatDayLong(p.intake_updated_at.slice(0, 10))}`

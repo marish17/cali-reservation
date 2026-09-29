@@ -25,6 +25,7 @@ export default function SignIn({
   initialMode?: Mode;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -51,6 +52,13 @@ export default function SignIn({
       return;
     }
 
+    // Il nome si salva subito: chi si registra senza prenotare non
+    // passa da nessun altro modulo che glielo chieda, e nell'elenco
+    // dei coach comparirebbe come un indirizzo email e basta.
+    if (mode === "signup" && data.session && name.trim()) {
+      await supabase.rpc("set_my_name", { p_name: name.trim() });
+    }
+
     // Se il progetto richiede la conferma dell'indirizzo, la
     // registrazione non apre una sessione: va detto, altrimenti
     // sembra che non sia successo nulla.
@@ -72,6 +80,26 @@ export default function SignIn({
     <form onSubmit={submit}>
       <p className="text-sm font-semibold text-white">{title}</p>
       {description && <p className="mt-1.5 text-sm text-slate-400">{description}</p>}
+
+      {mode === "signup" && (
+        <div className="mt-4">
+          <label className="label" htmlFor="auth-name">
+            Nome e cognome
+          </label>
+          <input
+            id="auth-name"
+            required
+            minLength={2}
+            autoComplete="name"
+            className="field"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <p className="mt-1.5 text-xs text-slate-500">
+            Serve al coach per riconoscerti.
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>

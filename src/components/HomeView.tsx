@@ -33,6 +33,9 @@ export default function HomeView() {
     workout: false,
     bookings: false,
   });
+  // Chi si registra senza prenotare non passa dal modulo che chiede il
+  // nome: al coach arriverebbe un indirizzo email e basta.
+  const [needsName, setNeedsName] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -46,20 +49,24 @@ export default function HomeView() {
     if (!session) {
       setView("prenota");
       setHas({ workout: false, bookings: false });
+      setNeedsName(false);
       return;
     }
 
-    const [w, b] = await Promise.all([
+    const [w, b, p] = await Promise.all([
       supabase.rpc("get_my_workout"),
       supabase
         .from("bookings")
         .select("id, status, day")
         .gte("day", toISODate(new Date()))
         .in("status", ["pending", "approved"]),
+      supabase.rpc("get_my_profile"),
     ]);
 
     const workout = ((w.data as unknown[]) ?? []).length > 0;
     const bookings = ((b.data as unknown[]) ?? []).length > 0;
+    const profile = ((p.data as { display_name: string | null }[]) ?? [])[0];
+    setNeedsName(!profile?.display_name);
     setHas({ workout, bookings });
     setView(workout ? "scheda" : bookings ? "richieste" : "prenota");
   }, [session]);
@@ -105,6 +112,33 @@ export default function HomeView() {
                 </p>
               )}
             </header>
+          )}
+
+          {/* Registrato, ma senza scheda e senza prove: è chi si allena
+              già da noi e si è fatto l'account per i servizi. Mandarlo
+              dritto al calendario delle prove sarebbe un equivoco. */}
+          {session && view === "prenota" && !has.workout && !has.bookings && (
+            <section className="card mb-5 border-accent/35">
+              <h2 className="text-base font-semibold text-white">
+                Non hai ancora una scheda
+              </h2>
+              <p className="mt-1.5 text-sm text-slate-300">
+                Se ti alleni già da noi, te la assegna il tuo coach: la trovi
+                qui appena è pronta. Se invece non ci sei mai stato, prenota
+                una prova qui sotto.
+              </p>
+              {needsName && (
+                <>
+                  <p className="mt-3 text-sm text-slate-400">
+                    Intanto dicci come ti chiami, altrimenti il coach vede
+                    solo il tuo indirizzo email e non sa chi sei.
+                  </p>
+                  <Link href="/profilo" className="btn-primary mt-3">
+                    Aggiungi nome e foto
+                  </Link>
+                </>
+              )}
+            </section>
           )}
 
           {view === "prenota" && <InstallHint />}

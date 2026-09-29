@@ -36,8 +36,8 @@ export default function AccessView() {
 
       <h1 className="text-2xl font-bold">Accedi</h1>
       <p className="mt-2 text-sm leading-relaxed text-slate-400">
-        Con l&apos;email e la password che hai usato per prenotare. Dentro
-        trovi la tua scheda, se ne hai una, e lo stato delle tue richieste.
+        Dentro trovi la tua scheda, se ne hai una, e lo stato delle tue
+        richieste.
       </p>
 
       <div className="card mt-6">
@@ -46,19 +46,33 @@ export default function AccessView() {
         ) : (
           <SignIn
             initialMode="signin"
-            title="Email e password"
-            description="Se non ti ricordi di averne fatto uno, probabilmente non ce l'hai: prenota una prova e l'account si crea lì."
+            title="Entra nel tuo account"
+            description="Se non hai ancora un account, qui sotto puoi crearne uno: non serve prenotare una prova."
           />
         )}
       </div>
 
-      <p className="mt-6 text-sm text-slate-400">
-        Non ti sei mai allenato da noi?{" "}
-        <Link href="/" className="text-accentSoft underline underline-offset-4">
-          Prenota una prova gratuita
-        </Link>
-        .
-      </p>
+      {/* Due strade diverse, dette tutte e due. Chi si allena già da noi
+          non deve prenotare una prova che non gli serve solo per avere
+          un account. */}
+      <div className="mt-6 space-y-2 text-sm text-slate-400">
+        <p>
+          <strong className="font-medium text-slate-300">
+            Ti alleni già da noi?
+          </strong>{" "}
+          Crea l&apos;account qui sopra con «Non ho un account»: il tuo coach ti
+          assegnerà la scheda.
+        </p>
+        <p>
+          <strong className="font-medium text-slate-300">
+            Non ci sei mai stato?
+          </strong>{" "}
+          <Link href="/" className="text-accentSoft underline underline-offset-4">
+            Prenota una prova gratuita
+          </Link>
+          : l&apos;account si crea durante la prenotazione.
+        </p>
+      </div>
     </main>
   );
 }
