@@ -112,13 +112,21 @@ function AdminChrome({
   children: React.ReactNode;
 }) {
   const { count: pending, increased, acknowledge } = useCount("pending_count", 45000);
+  // Chi allena può a sua volta essere allenato da un altro coach. La
+  // voce compare solo se una scheda ce l'ha davvero: un link a una
+  // pagina vuota è peggio di nessun link.
+  const [hasWorkout, setHasWorkout] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [me, setMe] = useState<{ display_name: string | null; avatar_path: string | null } | null>(null);
 
   useEffect(() => {
     void (async () => {
-      const { data } = await supabase.rpc("get_my_profile");
-      setMe(((data as typeof me[]) ?? [])[0] ?? null);
+      const [p, w] = await Promise.all([
+        supabase.rpc("get_my_profile"),
+        supabase.rpc("get_my_workout"),
+      ]);
+      setMe(((p.data as typeof me[]) ?? [])[0] ?? null);
+      setHasWorkout(((w.data as unknown[]) ?? []).length > 0);
     })();
   }, []);
 
@@ -149,9 +157,13 @@ function AdminChrome({
     };
   }, [menuOpen]);
 
+  const items = hasWorkout
+    ? [...NAV, { href: "/scheda", label: "La mia scheda" }]
+    : NAV;
+
   const nav = (
     <nav className="flex flex-col gap-1">
-      {NAV.map((item) => {
+      {items.map((item) => {
         const active = pathname === item.href;
         return (
           <Link

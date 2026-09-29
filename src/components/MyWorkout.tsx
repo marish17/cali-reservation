@@ -7,7 +7,14 @@ import { toWorkout, type WorkoutRow } from "@/lib/types";
 
 type Workout = NonNullable<ReturnType<typeof toWorkout>>;
 
-export default function MyWorkout({ onEmpty }: { onEmpty?: () => void }) {
+export default function MyWorkout({
+  onEmpty,
+  empty,
+}: {
+  onEmpty?: () => void;
+  /** Cosa mostrare a chi una scheda non ce l'ha. */
+  empty?: React.ReactNode;
+}) {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +32,7 @@ export default function MyWorkout({ onEmpty }: { onEmpty?: () => void }) {
   }, [load]);
 
   if (loading) return <p className="card text-sm text-slate-400">Caricamento…</p>;
-  if (!workout) return null;
+  if (!workout) return <>{empty ?? null}</>;
 
   return (
     <div className="space-y-4">
