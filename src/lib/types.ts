@@ -78,3 +78,49 @@ export type Settings = {
   contact_phone: string | null;
   privacy_text: string | null;
 };
+
+export const UNITS = ["reps", "seconds", "kg", "meters"] as const;
+export type ExerciseUnit = (typeof UNITS)[number];
+
+export const UNIT_LABEL: Record<ExerciseUnit, string> = {
+  reps: "ripetizioni",
+  seconds: "secondi",
+  kg: "kg",
+  meters: "metri",
+};
+
+export type Exercise = {
+  id: string;
+  name: string;
+  category: string | null;
+  unit: ExerciseUnit;
+  notes: string | null;
+  active: boolean;
+};
+
+export type Person = {
+  user_id: string;
+  email: string | null;
+  display_name: string | null;
+  avatar_path: string | null;
+  is_student: boolean;
+  coach_id: string | null;
+  intake_updated_at: string | null;
+  last_booking: string | null;
+};
+
+export type IntakeAnswer = {
+  question_id: string;
+  value: unknown;
+  updated_at: string;
+};
+
+export type AssessmentRow = {
+  assessment_id: string;
+  day: string;
+  notes: string | null;
+  exercise_id: string;
+  exercise_name: string;
+  value: number;
+  unit: ExerciseUnit;
+};

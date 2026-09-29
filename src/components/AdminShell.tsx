@@ -13,8 +13,10 @@ import PushToggle from "@/components/PushToggle";
 
 const NAV = [
   { href: "/admin", label: "Prenotazioni" },
+  { href: "/admin/allievi", label: "Allievi" },
   { href: "/admin/orari", label: "Coach e orari" },
   { href: "/admin/chiusure", label: "Chiusure" },
+  { href: "/admin/esercizi", label: "Esercizi" },
   { href: "/admin/impostazioni", label: "Impostazioni" },
   { href: "/admin/accessi", label: "Accessi" },
 ];

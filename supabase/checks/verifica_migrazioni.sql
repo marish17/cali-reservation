@@ -47,6 +47,15 @@ with esiti as (
   -- Senza questa non puoi segnare le assenze dei coach.
   select '0012 — account coach e assenze',
          to_regclass('public.coach_absences') is not null
+  union all
+  -- Senza questa nessuno ha nome e foto: si viene riconosciuti dall'email.
+  select '0013 — nome e foto del profilo',
+         to_regprocedure('public.save_my_profile(text,text)') is not null
+  union all
+  -- Senza questa non ci sono allievi, questionario né valutazioni.
+  select '0014 — allievi, questionario e valutazioni',
+         to_regclass('public.intake_answers') is not null
+     and to_regprocedure('public.list_people()') is not null
 )
 select migrazione,
        case when applicata then 'sì' else 'DA FARE' end as applicata
