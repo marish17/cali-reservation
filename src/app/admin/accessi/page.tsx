@@ -3,10 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { bookingErrorMessage } from "@/lib/errors";
+import Avatar from "@/components/Avatar";
 
 type AdminRow = {
   admin_id: string;
   admin_email: string | null;
+  display_name: string | null;
+  avatar_path: string | null;
   granted_at: string;
   is_me: boolean;
 };
@@ -97,7 +100,18 @@ export default function AdminAccessPage() {
               key={row.admin_id}
               className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm"
             >
-              <span className="truncate">{row.admin_email ?? "(email sconosciuta)"}</span>
+              <Avatar
+                name={row.display_name}
+                email={row.admin_email}
+                path={row.avatar_path}
+                size={28}
+              />
+              <span className="min-w-0 truncate">
+                {row.display_name || row.admin_email || "(sconosciuto)"}
+                {row.display_name && (
+                  <span className="ml-2 text-slate-500">{row.admin_email}</span>
+                )}
+              </span>
               {row.is_me && <span className="badge">sei tu</span>}
               {!row.is_me && (
                 <button

@@ -8,6 +8,7 @@ import CoachLogin from "@/components/CoachLogin";
 import { supabase } from "@/lib/supabase";
 import { useCount } from "@/lib/useCount";
 import CountBadge from "@/components/CountBadge";
+import Avatar from "@/components/Avatar";
 import PushToggle from "@/components/PushToggle";
 
 const NAV = [
@@ -110,6 +111,14 @@ function AdminChrome({
 }) {
   const { count: pending, increased, acknowledge } = useCount("pending_count", 45000);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [me, setMe] = useState<{ display_name: string | null; avatar_path: string | null } | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.rpc("get_my_profile");
+      setMe(((data as typeof me[]) ?? [])[0] ?? null);
+    })();
+  }, []);
 
   // Avviso del sistema operativo: è l'unico modo, senza email, di
   // accorgersi di una richiesta senza fissare la pagina.
@@ -192,7 +201,13 @@ function AdminChrome({
         <aside className="hidden lg:block">
           {nav}
           <div className="mt-5 border-t border-line pt-4">
-            <p className="mb-2 truncate text-[11px] text-slate-500">{email}</p>
+            <Link
+              href="/profilo"
+              className="mb-3 flex min-w-0 items-center gap-2 text-[11px] text-slate-400 hover:text-slate-200"
+            >
+              <Avatar name={me?.display_name} email={email} path={me?.avatar_path} size={26} />
+              <span className="truncate">{me?.display_name || email}</span>
+            </Link>
             <PushToggle audience="coach" />
           </div>
         </aside>
@@ -227,7 +242,13 @@ function AdminChrome({
 
             {nav}
 
-            <p className="mt-auto truncate pt-4 text-[11px] text-slate-500">{email}</p>
+            <Link
+              href="/profilo"
+              className="mt-auto flex min-w-0 items-center gap-2 pt-4 text-[11px] text-slate-400"
+            >
+              <Avatar name={me?.display_name} email={email} path={me?.avatar_path} size={26} />
+              <span className="truncate">{me?.display_name || email}</span>
+            </Link>
           </div>
         </div>
       )}

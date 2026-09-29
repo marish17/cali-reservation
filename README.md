@@ -19,7 +19,7 @@ Su iPhone le push arrivano solo se il sito è stato aggiunto alla schermata Home
 la pagina principale lo spiega a chi non l'ha fatto.
 
 - **Stack**: Next.js 14 in esportazione statica (App Router, TypeScript, Tailwind) + Supabase (Postgres, Auth, RLS)
-- **Pagine pubbliche**: `/` prenotazione, `/le-mie-prenotazioni` stato delle proprie richieste, `/privacy` informativa
+- **Pagine pubbliche**: `/` prenotazione, `/le-mie-prenotazioni` stato delle proprie richieste, `/profilo` nome e foto, `/privacy` informativa
 
 Il sito è un pacchetto di file statici: non c'è nessun processo acceso a
 generarli, e ogni dato arriva da Supabase direttamente dal browser. Le regole
@@ -121,6 +121,7 @@ incolla per intero, **in ordine**:
 10. `supabase/migrations/0010_push_triggers.sql` — inneschi che fanno partire le push
 11. `supabase/migrations/0011_public_settings_vapid.sql` — la chiave delle push arriva al browser
 12. `supabase/migrations/0012_coach_accounts_absences.sql` — coach collegati agli account, assenze
+13. `supabase/migrations/0013_profile_identity.sql` — nome e foto del profilo (crea il bucket `avatars`)
 
 Per sapere quali risultano già applicate:
 `supabase/checks/verifica_migrazioni.sql` risponde con un elenco leggibile e
@@ -245,6 +246,8 @@ progetto di produzione), ognuna su un database pulito:
   richiede un `net.http_post` finto che registri le chiamate invece di farle
 - `supabase/tests/coach_absences_test.sql` — collegamento coach/account, assenze che
   tolgono solo le fasce di quel coach, prenotazioni esistenti mai toccate
+- `supabase/tests/profile_test.sql` — nome e foto del profilo, e la separazione fra il
+  nome di chi ha l'account e quello di chi fa la prova
 - `supabase/tests/security_test.sql` — chi può leggere e scrivere cosa: verifica
   che un visitatore non veda nessun dato personale, che un utente registrato veda
   soltanto i propri, e che non possa scrivere direttamente nelle tabelle

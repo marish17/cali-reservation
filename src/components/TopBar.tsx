@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/lib/useSession";
 import { useCount } from "@/lib/useCount";
 import CountBadge from "@/components/CountBadge";
+import Avatar from "@/components/Avatar";
 
 /**
  * Barra di servizio, ancorata in cima. Da telefono resta visibile
@@ -35,20 +37,7 @@ export default function TopBar({ gymName }: { gymName: string }) {
         </Link>
       </div>
 
-      {session && (
-        <div className="flex items-center gap-3 border-t border-line/60 py-2 text-[11px] text-slate-500">
-          <span className="truncate">{session.user.email}</span>
-          <Link href="/admin" className="ml-auto shrink-0 hover:text-slate-300">
-            Area coach
-          </Link>
-          <button
-            className="shrink-0 hover:text-slate-300"
-            onClick={() => void supabase.auth.signOut()}
-          >
-            Esci
-          </button>
-        </div>
-      )}
+      {session && <SessionRow email={session.user.email ?? null} />}
     </div>
   );
 }
@@ -57,4 +46,33 @@ export default function TopBar({ gymName }: { gymName: string }) {
 function MyUpdatesBadge() {
   const { count } = useCount("my_updates_count");
   return <CountBadge count={count} />;
+}
+
+/** Chi sei, con nome e foto invece dell'indirizzo email. */
+function SessionRow({ email }: { email: string | null }) {
+  const [profile, setProfile] = useState<{ display_name: string | null; avatar_path: string | null } | null>(
+    null
+  );
+
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.rpc("get_my_profile");
+      setProfile(((data as typeof profile[]) ?? [])[0] ?? null);
+    })();
+  }, []);
+
+  return (
+    <div className="flex items-center gap-2 border-t border-line/60 py-2 text-[11px] text-slate-500">
+      <Link href="/profilo" className="flex min-w-0 items-center gap-2 hover:text-slate-300">
+        <Avatar name={profile?.display_name} email={email} path={profile?.avatar_path} size={22} />
+        <span className="truncate">{profile?.display_name || email}</span>
+      </Link>
+      <Link href="/admin" className="ml-auto shrink-0 hover:text-slate-300">
+        Area coach
+      </Link>
+      <button className="shrink-0 hover:text-slate-300" onClick={() => void supabase.auth.signOut()}>
+        Esci
+      </button>
+    </div>
+  );
 }
