@@ -32,6 +32,9 @@ export default function WorkoutEditor({
   const [loading, setLoading] = useState(workoutId !== null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Correggere un refuso non deve suonare il telefono di nessuno:
+  // decide il coach, invece di indovinarlo noi.
+  const [notify, setNotify] = useState(true);
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
 
   const load = useCallback(async () => {
@@ -80,6 +83,7 @@ export default function WorkoutEditor({
       p_days: days.map((d) => ({ title: d.title.trim(), body: d.body })),
       p_intro: intro.trim() || null,
       p_coach_id: coachId,
+      p_notify: studentId !== null && notify,
     });
     setSaving(false);
     if (error) setError(bookingErrorMessage(error));
@@ -200,6 +204,24 @@ export default function WorkoutEditor({
           onChange={(e) => edit(open, { body: e.target.value })}
         />
       </section>
+
+      {studentId && (
+        <label className="card flex items-start gap-2.5 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-5 w-5 shrink-0 accent-accent"
+            checked={notify}
+            onChange={(e) => setNotify(e.target.checked)}
+          />
+          <span className="text-slate-300">
+            Avvisa l&apos;allievo
+            <span className="mt-1 block text-xs text-slate-500">
+              Gli arriva una notifica sul telefono, se le ha attivate. Togli la
+              spunta se stai solo correggendo un refuso.
+            </span>
+          </span>
+        </label>
+      )}
 
       {error && <p className="text-sm text-red-200">{error}</p>}
 

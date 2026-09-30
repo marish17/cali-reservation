@@ -9,7 +9,11 @@ import { usePush } from "@/lib/usePush";
  * email sono l'unico modo di essere avvisati, quindi non basta che
  * funzionino, bisogna poter vedere che sono accese.
  */
-export default function PushToggle({ audience }: { audience: "coach" | "booker" }) {
+export default function PushToggle({
+  audience,
+}: {
+  audience: "coach" | "booker" | "student";
+}) {
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const { state, busy, error, enable, disable } = usePush(publicKey);
 
@@ -26,7 +30,9 @@ export default function PushToggle({ audience }: { audience: "coach" | "booker" 
   const what =
     audience === "coach"
       ? "quando arriva una richiesta"
-      : "quando il coach risponde";
+      : audience === "student"
+        ? "quando il coach aggiorna la tua scheda"
+        : "quando il coach risponde";
 
   if (state === "needs-install") {
     return (

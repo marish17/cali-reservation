@@ -14,7 +14,21 @@
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-type Payload = { booking_id?: string; audience?: string };
+// `booking_id` è il nome vecchio: il soggetto adesso può essere anche
+// una scheda, e il database li manda entrambi durante il passaggio.
+type Payload = { subject_id?: string; booking_id?: string; audience?: string };
+
+const AUDIENCES = ["coaches", "booker", "student_new", "student_update"] as const;
+type Audience = (typeof AUDIENCES)[number];
+
+// Un avviso che sostituisce il precedente invece di accodarsi: tre
+// salvataggi di fila della stessa scheda non devono lasciare tre
+// notifiche sul telefono.
+function tagFor(audience: Audience, subject: string): string {
+  if (audience === "coaches") return "richieste";
+  if (audience === "booker") return `esito-${subject}`;
+  return `scheda-${subject}`;
+}
 
 type Target = {
   endpoint: string;
@@ -54,13 +68,14 @@ Deno.serve(async (request) => {
     return new Response("Bad request", { status: 400 });
   }
 
-  const audience = payload.audience;
-  if (!payload.booking_id || (audience !== "coaches" && audience !== "booker")) {
+  const audience = payload.audience as Audience | undefined;
+  const subject = payload.subject_id ?? payload.booking_id;
+  if (!subject || !audience || !AUDIENCES.includes(audience)) {
     return Response.json({ skipped: true });
   }
 
-  const { data, error } = await supabase.rpc("push_targets_for_booking", {
-    p_booking_id: payload.booking_id,
+  const { data, error } = await supabase.rpc("push_targets", {
+    p_subject_id: subject,
     p_audience: audience,
   });
 
@@ -85,7 +100,7 @@ Deno.serve(async (request) => {
             title: target.title,
             body: target.body,
             url: target.url,
-            tag: audience === "coaches" ? "richieste" : `esito-${payload.booking_id}`,
+            tag: tagFor(audience, subject),
           })
         );
         sent++;

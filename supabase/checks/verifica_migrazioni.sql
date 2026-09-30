@@ -71,6 +71,13 @@ with esiti as (
   select '0017 — iscritti, archivio, password',
          to_regprocedure('public.get_my_membership()') is not null
      and to_regclass('public.password_resets') is not null
+  union all
+  -- Senza questa l'allievo non sa mai che la scheda è arrivata.
+  select '0018 — avviso sulla scheda',
+         to_regprocedure('public.push_targets(uuid,text)') is not null
+     and exists (select 1 from information_schema.parameters
+                 where specific_schema = 'public' and parameter_name = 'p_notify'
+                   and specific_name like 'save_workout%')
 )
 select migrazione,
        case when applicata then 'sì' else 'DA FARE' end as applicata
