@@ -1,7 +1,7 @@
 {
-  "name": "Calisthenics Academy — Prenotazioni",
+  "name": "Calisthenics Academy",
   "short_name": "Academy",
-  "description": "Prenota la tua prova e segui lo stato della richiesta.",
+  "description": "La tua scheda, i tuoi orari e le prenotazioni delle prove.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0b",
