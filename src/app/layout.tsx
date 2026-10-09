@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AppTabs from "@/components/AppTabs";
 
 export const metadata: Metadata = {
   // Il nome sulla linguetta è quello della palestra, non quello di una
@@ -35,12 +36,23 @@ export const metadata: Metadata = {
 
 export const viewport = {
   themeColor: "#0a0a0b",
+  // Senza `cover` il telefono non dichiara le misure del notch, e i
+  // margini di sicurezza tornano tutti a zero.
+  viewportFit: "cover" as const,
+  // iOS ignora questi due in Safari, apposta. Servono per Android e
+  // per i browser che li rispettano; su iOS il lavoro vero lo fa la
+  // regola `touch-action` in globals.css.
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it">
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        {children}
+        <AppTabs />
+      </body>
     </html>
   );
 }

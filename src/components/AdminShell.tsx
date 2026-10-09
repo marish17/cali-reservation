@@ -10,6 +10,7 @@ import { useCount } from "@/lib/useCount";
 import CountBadge from "@/components/CountBadge";
 import Avatar from "@/components/Avatar";
 import PushToggle from "@/components/PushToggle";
+import TabBar, { IconCalendar, IconClock, IconMore, IconPeople, type Tab } from "@/components/TabBar";
 
 const NAV = [
   { href: "/admin", label: "Prenotazioni" },
@@ -185,11 +186,36 @@ function AdminChrome({
     </nav>
   );
 
+  // Le tre cose che un coach apre ogni giorno, più il menu per tutto
+  // il resto: in una barra ci stanno quattro voci, non sette.
+  const tabs: Tab[] = [
+    {
+      key: "prenotazioni",
+      label: "Richieste",
+      icon: IconCalendar,
+      href: "/admin",
+      active: pathname === "/admin",
+      badge: pending,
+    },
+    {
+      key: "allievi",
+      label: "Allievi",
+      icon: IconPeople,
+      href: "/admin/allievi",
+      active: pathname.startsWith("/admin/allievi"),
+    },
+    { key: "timer", label: "Timer", icon: IconClock, href: "/timer" },
+    { key: "altro", label: "Altro", icon: IconMore, onClick: () => setMenuOpen(true) },
+  ];
+
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-4">
-      <header className="mb-5 flex items-center gap-3 border-b border-line pb-3">
+    <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-0">
+      <header className="app-header mb-5 flex items-center gap-3 pb-3">
         <button
-          className="btn-ghost !min-h-[40px] !w-11 !px-0 lg:hidden"
+          // Sul telefono il menu lo apre la barra in basso: qui serve
+          // solo nella fascia dei tablet, dove la barra non c'è ancora
+          // e la colonna laterale nemmeno.
+          className="btn-ghost !hidden !min-h-[40px] !w-11 !px-0 sm:!inline-flex lg:!hidden"
           aria-label="Apri il menu"
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen(true)}
@@ -267,6 +293,8 @@ function AdminChrome({
           </div>
         </div>
       )}
+
+      <TabBar tabs={tabs} />
     </div>
   );
 }

@@ -26,7 +26,7 @@ export default function TopBar({
   const { session } = useSession();
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 mb-6 border-b border-line bg-ink/90 px-4 backdrop-blur-md sm:mb-8">
+    <div className="app-header mb-6 sm:mb-8">
       <div className="flex items-center gap-3 py-2.5">
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
           <Logo size={36} />

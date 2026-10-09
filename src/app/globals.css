@@ -4,16 +4,31 @@
 
 :root {
   color-scheme: dark;
-  /* Spazio occupato dalla barra di sistema sui telefoni con notch. */
+  /* Spazio occupato dalle barre di sistema sui telefoni con notch.
+     Arrivano dal telefono solo con viewportFit: "cover". */
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  /* Altezza della barra di navigazione in basso, quando c'e'. Serve a
+     far salire sopra di lei i pulsanti ancorati in fondo. */
+  --tabbar: 0px;
 }
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Niente ingrandimento con le dita ne' col doppio tocco: `pan-x
+     pan-y` dice al browser che qui si scorre e basta. E' l'unica leva
+     che iOS rispetta davvero — il `user-scalable=no` del viewport lo
+     ignora da anni, per scelta. */
+  touch-action: pan-x pan-y;
+  /* Il rimbalzo elastico a fine pagina scopre lo sfondo del browser e
+     fa sembrare l'app una pagina web. */
+  overscroll-behavior: none;
 }
 
 body {
   @apply bg-ink text-slate-100 antialiased;
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
   background-image: radial-gradient(
     900px 520px at 50% -8%,
     rgba(224, 30, 43, 0.18),
@@ -63,9 +78,33 @@ body {
      pulsante principale resta raggiungibile col pollice senza dover
      scorrere fino in fondo a un modulo lungo. */
   .action-bar {
-    @apply sticky bottom-0 z-20 -mx-4 border-t border-line bg-ink/95 px-4 pt-3
+    @apply sticky z-20 -mx-4 border-t border-line bg-ink/95 px-4 pt-3
            backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:backdrop-blur-none;
+    /* Sopra la barra di navigazione, non sotto: un pulsante «Salva»
+       mezzo coperto e' peggio di nessun pulsante ancorato. */
+    bottom: var(--tabbar);
     padding-bottom: calc(0.75rem + var(--safe-bottom));
+  }
+
+  /* Il contenuto non deve finire sotto la barra in basso. Lo spazio si
+     aggiunge qui e non su ogni pagina, se no una se ne dimentica. */
+  body.has-tabbar {
+    --tabbar: calc(3.5rem + var(--safe-bottom));
+    padding-bottom: var(--tabbar);
+  }
+
+  @media (min-width: 640px) {
+    body.has-tabbar {
+      --tabbar: 0px;
+      padding-bottom: 0;
+    }
+  }
+
+  /* L'intestazione fissa: sul telefono in modalita' app il contenuto
+     finirebbe sotto l'orologio e la batteria. */
+  .app-header {
+    @apply sticky top-0 z-30 -mx-4 border-b border-line bg-ink/90 px-4 backdrop-blur-md;
+    padding-top: calc(0.625rem + var(--safe-top));
   }
 
   /* Numero del passo, per orientarsi in una pagina che da telefono si
