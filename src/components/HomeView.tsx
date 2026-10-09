@@ -7,7 +7,6 @@ import CoachHours from "@/components/CoachHours";
 import InstallHint from "@/components/InstallHint";
 import MyBookings from "@/components/MyBookings";
 import MyWorkout from "@/components/MyWorkout";
-import PushToggle from "@/components/PushToggle";
 import SetupNotice from "@/components/SetupNotice";
 import TopBar from "@/components/TopBar";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
@@ -241,21 +240,7 @@ export default function HomeView() {
           {me?.enrolled && (
             <div className="mt-4 space-y-4">
               <CoachHours />
-              {/* Un iscritto non apre mai «le mie richieste»: se
-                  l'interruttore delle notifiche sta solo lì, per lui
-                  non esiste, e l'avviso sulla scheda non gli arriva
-                  mai. */}
-              <div className="card">
-                <p className="text-sm font-medium text-slate-200">Avvisi</p>
-                <p className="mb-3 mt-1 text-sm text-slate-400">
-                  Per sapere subito quando il tuo coach aggiorna la scheda,
-                  senza dover aprire l&apos;app.
-                </p>
-                {/* L'invito ad aggiungere il sito alla Home lo fa da sé
-                    quando serve, e con le parole giuste: quello
-                    generico parla di prenotare, che qui non c'entra. */}
-                <PushToggle audience="student" />
-              </div>
+
             </div>
           )}
         </>

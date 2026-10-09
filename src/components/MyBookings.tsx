@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase";
 import { useSession } from "@/lib/useSession";
 import SignIn from "@/components/SignIn";
 import StatusBadge from "@/components/StatusBadge";
-import PushToggle from "@/components/PushToggle";
 import { bookingErrorMessage } from "@/lib/errors";
 import { formatDayLong, formatTime, toISODate } from "@/lib/date";
 
@@ -97,7 +96,6 @@ export default function MyBookings() {
   return (
     <div className="space-y-3">
       <div className="pb-1">
-        <PushToggle audience="booker" />
       </div>
 
       {error && <p className="card border-red-500/40 text-sm text-red-200">{error}</p>}

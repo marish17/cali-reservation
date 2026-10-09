@@ -10,7 +10,6 @@ import { useCount } from "@/lib/useCount";
 import { ADMIN_NAV, samePath } from "@/lib/nav";
 import CountBadge from "@/components/CountBadge";
 import Avatar from "@/components/Avatar";
-import PushToggle from "@/components/PushToggle";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -188,16 +187,10 @@ function AdminChrome({
               <Avatar name={me?.display_name} email={email} path={me?.avatar_path} size={26} />
               <span className="truncate">{me?.display_name || email}</span>
             </Link>
-            <PushToggle audience="coach" />
           </div>
         </aside>
 
-        <div>
-          <div className="mb-5 lg:hidden">
-            <PushToggle audience="coach" />
-          </div>
-          {children}
-        </div>
+        <div>{children}</div>
       </div>
     </div>
   );

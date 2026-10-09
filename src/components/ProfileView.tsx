@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Avatar from "@/components/Avatar";
 import PageHeader from "@/components/PageHeader";
 import ChangePassword from "@/components/ChangePassword";
+import PushToggle from "@/components/PushToggle";
 import SignIn from "@/components/SignIn";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/lib/useSession";
@@ -25,10 +26,17 @@ export default function ProfileView() {
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Il testo delle notifiche cambia: a un coach arrivano le richieste,
+  // a chi si allena gli aggiornamenti della scheda.
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const load = useCallback(async () => {
     if (!session) return;
-    const { data } = await supabase.rpc("get_my_profile");
+    const [{ data }, admin] = await Promise.all([
+      supabase.rpc("get_my_profile"),
+      supabase.rpc("is_admin"),
+    ]);
+    setIsAdmin(Boolean(admin.data));
     const row = ((data as Profile[]) ?? [])[0] ?? null;
     setProfile(row);
     setName(row?.display_name ?? "");
@@ -234,6 +242,17 @@ export default function ProfileView() {
             {status === "saved" && <span className="text-sm text-accentSoft">Profilo salvato.</span>}
           </div>
         </form>
+      )}
+
+      {session && (
+        <section className="card mt-5">
+          <h2 className="text-base font-semibold">Notifiche</h2>
+          <p className="mb-4 mt-1 text-sm text-slate-400">
+            Senza email, è l&apos;unico modo per sapere che è successo
+            qualcosa senza aprire l&apos;app.
+          </p>
+          <PushToggle audience={isAdmin ? "coach" : "student"} />
+        </section>
       )}
 
       {session && (
