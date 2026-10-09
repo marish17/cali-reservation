@@ -33,7 +33,7 @@ export default function TabBar({ tabs }: { tabs: Tab[] }) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/92 backdrop-blur-xl sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/92 backdrop-blur-xl lg:hidden"
       style={{ paddingBottom: "var(--safe-bottom)" }}
       aria-label="Navigazione principale"
     >

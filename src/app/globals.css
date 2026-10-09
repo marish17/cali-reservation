@@ -93,7 +93,9 @@ body {
     padding-bottom: var(--tabbar);
   }
 
-  @media (min-width: 640px) {
+  /* Sopra i 1024px c'e' la colonna laterale sempre aperta, e la barra
+     sparisce: due strade per gli stessi posti confondono. */
+  @media (min-width: 1024px) {
     body.has-tabbar {
       --tabbar: 0px;
       padding-bottom: 0;

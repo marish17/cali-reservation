@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import Logo from "@/components/Logo";
+import PageHeader from "@/components/PageHeader";
 import { useTimer } from "@/lib/useTimer";
 import { useWakeLock } from "@/lib/useWakeLock";
 import {
@@ -77,18 +76,8 @@ export default function TimerView() {
           : "Lavora";
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 pb-10 pt-4">
-      <div className="mb-6 flex items-center gap-3 border-b border-line pb-3">
-        <Link href="/" className="flex items-center gap-2.5">
-          <Logo size={30} />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accentSoft">
-            Timer
-          </span>
-        </Link>
-        <Link href="/" className="ml-auto text-xs text-slate-400 hover:text-slate-200">
-          ← Torna indietro
-        </Link>
-      </div>
+    <main className="mx-auto w-full max-w-lg px-4 pb-10">
+      <PageHeader title="Timer" />
 
       {/* Il quadrante: numeri enormi, perché si guarda da due metri e
           col fiatone. */}

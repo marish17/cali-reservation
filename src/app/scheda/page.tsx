@@ -1,4 +1,4 @@
-import Link from "next/link";
+import PageHeader from "@/components/PageHeader";
 import MyWorkout from "@/components/MyWorkout";
 
 export const metadata = { title: "La mia scheda" };
@@ -10,15 +10,8 @@ export const metadata = { title: "La mia scheda" };
  */
 export default function MyWorkoutPage() {
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-10">
-      <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line pb-3 text-xs text-slate-400">
-        <Link href="/admin" className="hover:text-slate-200">
-          ← Area coach
-        </Link>
-        <Link href="/" className="ml-auto hover:text-slate-200">
-          Sito pubblico
-        </Link>
-      </div>
+    <main className="mx-auto w-full max-w-2xl px-4 pb-10">
+      <PageHeader title="La mia scheda" />
 
       <MyWorkout
         empty={

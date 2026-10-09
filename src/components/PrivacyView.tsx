@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import PageHeader from "@/components/PageHeader";
 import PrivacyText from "@/components/PrivacyText";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
@@ -26,14 +26,8 @@ export default function PrivacyView() {
   const text = privacy?.privacy_text?.trim();
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
-      <div className="mb-8 border-b border-line pb-3">
-        <Link href="/" className="text-xs text-slate-400 hover:text-slate-200">
-          ← Torna alle prenotazioni
-        </Link>
-      </div>
-
-      <h1 className="text-2xl font-bold">Informativa privacy</h1>
+    <main className="mx-auto w-full max-w-2xl px-4 pb-10">
+      <PageHeader title="Informativa privacy" />
       {privacy?.privacy_updated_at && (
         <p className="mt-2 text-xs text-slate-500">
           Ultimo aggiornamento:{" "}

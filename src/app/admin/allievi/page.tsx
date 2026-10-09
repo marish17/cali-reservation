@@ -45,13 +45,17 @@ function People() {
     const q = query.trim().toLowerCase();
     return people.filter((p) => {
       if (!showArchived && !p.active) return false;
-      if (onlyStudents && !p.is_student) return false;
+      if (onlyStudents && !p.enrolled) return false;
       if (!q) return true;
       return `${p.display_name ?? ""} ${p.email ?? ""}`.toLowerCase().includes(q);
     });
   }, [people, query, onlyStudents, showArchived]);
 
   const archived = people.filter((p) => !p.active).length;
+
+  // Chi ha le chiavi del pannello non si conta: il numero deve dire
+  // quante persone segui, non quanti account esistono.
+  const counted = visible.filter((p) => !p.is_coach).length;
 
   const current = people.find((p) => p.user_id === selected) ?? null;
 
@@ -71,10 +75,18 @@ function People() {
   return (
     <div className="space-y-4">
       <section className="card">
-        <h2 className="text-base font-semibold">Persone</h2>
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-base font-semibold">
+            {onlyStudents ? "Iscritti" : "Persone"}
+          </h2>
+          <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-sm font-bold text-accentSoft">
+            {loading ? "…" : counted}
+          </span>
+        </div>
         <p className="mt-1 text-sm text-slate-400">
-          Tutti quelli che hanno un account. Diventano allievi quando compili
-          il questionario o assegni una scheda.
+          {onlyStudents
+            ? "Chi hai segnato come allievo iscritto."
+            : "Tutti quelli che hanno un account, senza contare i coach."}
         </p>
 
         <input
@@ -92,7 +104,7 @@ function People() {
             checked={onlyStudents}
             onChange={(e) => setOnlyStudents(e.target.checked)}
           />
-          Solo allievi
+          Solo iscritti
         </label>
 
         {archived > 0 && (

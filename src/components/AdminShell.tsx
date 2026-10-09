@@ -7,21 +7,10 @@ import Logo from "@/components/Logo";
 import CoachLogin from "@/components/CoachLogin";
 import { supabase } from "@/lib/supabase";
 import { useCount } from "@/lib/useCount";
+import { ADMIN_NAV, samePath } from "@/lib/nav";
 import CountBadge from "@/components/CountBadge";
 import Avatar from "@/components/Avatar";
 import PushToggle from "@/components/PushToggle";
-import TabBar, { IconCalendar, IconClock, IconMore, IconPeople, type Tab } from "@/components/TabBar";
-
-const NAV = [
-  { href: "/admin", label: "Prenotazioni" },
-  { href: "/admin/allievi", label: "Allievi" },
-  { href: "/admin/orari", label: "Coach e orari" },
-  { href: "/admin/chiusure", label: "Chiusure" },
-  { href: "/admin/esercizi", label: "Esercizi" },
-  { href: "/timer", label: "Timer" },
-  { href: "/admin/impostazioni", label: "Impostazioni" },
-  { href: "/admin/accessi", label: "Accessi" },
-];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -118,7 +107,6 @@ function AdminChrome({
   // voce compare solo se una scheda ce l'ha davvero: un link a una
   // pagina vuota è peggio di nessun link.
   const [hasWorkout, setHasWorkout] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [me, setMe] = useState<{ display_name: string | null; avatar_path: string | null } | null>(null);
 
   useEffect(() => {
@@ -144,29 +132,14 @@ function AdminChrome({
     });
   }, [increased, pending, acknowledge]);
 
-  // Cambiando sezione il menu si chiude da solo: restare aperto sopra
-  // la pagina appena scelta è il difetto classico di questi menu.
-  useEffect(() => setMenuOpen(false), [pathname]);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [menuOpen]);
-
   const items = hasWorkout
-    ? [...NAV, { href: "/scheda", label: "La mia scheda" }]
-    : NAV;
+    ? [...ADMIN_NAV, { href: "/scheda", label: "La mia scheda" }]
+    : ADMIN_NAV;
 
   const nav = (
     <nav className="flex flex-col gap-1">
       {items.map((item) => {
-        const active = pathname === item.href;
+        const active = samePath(pathname, item.href);
         return (
           <Link
             key={item.href}
@@ -186,43 +159,9 @@ function AdminChrome({
     </nav>
   );
 
-  // Le tre cose che un coach apre ogni giorno, più il menu per tutto
-  // il resto: in una barra ci stanno quattro voci, non sette.
-  const tabs: Tab[] = [
-    {
-      key: "prenotazioni",
-      label: "Richieste",
-      icon: IconCalendar,
-      href: "/admin",
-      active: pathname === "/admin",
-      badge: pending,
-    },
-    {
-      key: "allievi",
-      label: "Allievi",
-      icon: IconPeople,
-      href: "/admin/allievi",
-      active: pathname.startsWith("/admin/allievi"),
-    },
-    { key: "timer", label: "Timer", icon: IconClock, href: "/timer" },
-    { key: "altro", label: "Altro", icon: IconMore, onClick: () => setMenuOpen(true) },
-  ];
-
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-0">
       <header className="app-header mb-5 flex items-center gap-3 pb-3">
-        <button
-          // Sul telefono il menu lo apre la barra in basso: qui serve
-          // solo nella fascia dei tablet, dove la barra non c'è ancora
-          // e la colonna laterale nemmeno.
-          className="btn-ghost !hidden !min-h-[40px] !w-11 !px-0 sm:!inline-flex lg:!hidden"
-          aria-label="Apri il menu"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(true)}
-        >
-          <MenuIcon />
-        </button>
-
         <Logo size={32} />
         <h1 className="text-base font-bold sm:text-lg">Area coach</h1>
 
@@ -260,51 +199,6 @@ function AdminChrome({
           {children}
         </div>
       </div>
-
-      {menuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            className="absolute inset-0 bg-black/70"
-            aria-label="Chiudi il menu"
-            onClick={() => setMenuOpen(false)}
-          />
-          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col border-r border-line bg-surface p-4 shadow-2xl">
-            <div className="mb-4 flex items-center gap-3 border-b border-line pb-3">
-              <Logo size={30} />
-              <span className="text-sm font-bold">Area coach</span>
-              <button
-                className="btn-ghost ml-auto !min-h-[36px] !w-10 !px-0"
-                aria-label="Chiudi il menu"
-                onClick={() => setMenuOpen(false)}
-              >
-                ✕
-              </button>
-            </div>
-
-            {nav}
-
-            <Link
-              href="/profilo"
-              className="mt-auto flex min-w-0 items-center gap-2 pt-4 text-[11px] text-slate-400"
-            >
-              <Avatar name={me?.display_name} email={email} path={me?.avatar_path} size={26} />
-              <span className="truncate">{me?.display_name || email}</span>
-            </Link>
-          </div>
-        </div>
-      )}
-
-      <TabBar tabs={tabs} />
     </div>
-  );
-}
-
-function MenuIcon() {
-  return (
-    <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
-      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-        <path d="M1 1h16M1 7h16M1 13h16" />
-      </g>
-    </svg>
   );
 }

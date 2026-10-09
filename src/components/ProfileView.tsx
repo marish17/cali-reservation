@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import Avatar from "@/components/Avatar";
+import PageHeader from "@/components/PageHeader";
 import ChangePassword from "@/components/ChangePassword";
 import SignIn from "@/components/SignIn";
 import { supabase } from "@/lib/supabase";
@@ -95,15 +95,22 @@ export default function ProfileView() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-8 sm:py-12">
-      <div className="mb-8 border-b border-line pb-3">
-        <Link href="/" className="text-xs text-slate-400 hover:text-slate-200">
-          ← Torna alla home
-        </Link>
-      </div>
+    <main className="mx-auto w-full max-w-lg px-4 pb-10">
+      <PageHeader
+        title="Il mio profilo"
+        actions={
+          session ? (
+            <button
+              className="btn-ghost !min-h-[36px] !px-3 text-xs"
+              onClick={() => void supabase.auth.signOut()}
+            >
+              Esci
+            </button>
+          ) : null
+        }
+      />
 
-      <h1 className="text-2xl font-bold">Il mio profilo</h1>
-      <p className="mt-2 text-sm text-slate-400">
+      <p className="text-sm text-slate-400">
         Nome e foto con cui ti riconoscono gli altri, sia come allievo sia come coach.
       </p>
 

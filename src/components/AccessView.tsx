@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Logo from "@/components/Logo";
+import PageHeader from "@/components/PageHeader";
 import SignIn from "@/components/SignIn";
 import { useSession } from "@/lib/useSession";
 
@@ -26,16 +26,10 @@ export default function AccessView() {
   }, [session, router]);
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-10 sm:py-16">
-      <Link href="/" className="mb-8 flex items-center gap-3">
-        <Logo size={36} />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accentSoft">
-          Calisthenics Academy
-        </span>
-      </Link>
+    <main className="mx-auto w-full max-w-md px-4 pb-10">
+      <PageHeader title="Accedi" />
 
-      <h1 className="text-2xl font-bold">Accedi</h1>
-      <p className="mt-2 text-sm leading-relaxed text-slate-400">
+      <p className="text-sm leading-relaxed text-slate-400">
         Dentro trovi la tua scheda, se ne hai una, e lo stato delle tue
         richieste.
       </p>
