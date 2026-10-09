@@ -101,6 +101,7 @@ export type Exercise = {
 export type Person = {
   user_id: string;
   email: string | null;
+  phone: string | null;
   display_name: string | null;
   avatar_path: string | null;
   is_student: boolean;

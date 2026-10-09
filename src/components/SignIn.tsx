@@ -26,6 +26,7 @@ export default function SignIn({
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -55,8 +56,11 @@ export default function SignIn({
     // Il nome si salva subito: chi si registra senza prenotare non
     // passa da nessun altro modulo che glielo chieda, e nell'elenco
     // dei coach comparirebbe come un indirizzo email e basta.
-    if (mode === "signup" && data.session && name.trim()) {
-      await supabase.rpc("set_my_name", { p_name: name.trim() });
+    if (mode === "signup" && data.session && (name.trim() || phone.trim())) {
+      await supabase.rpc("set_my_name", {
+        p_name: name.trim(),
+        p_phone: phone.trim() || null,
+      });
     }
 
     // Se il progetto richiede la conferma dell'indirizzo, la
@@ -97,6 +101,26 @@ export default function SignIn({
           />
           <p className="mt-1.5 text-xs text-slate-500">
             Serve al coach per riconoscerti.
+          </p>
+
+          {/* Senza un numero, l'unico modo di raggiungere una persona è
+              aspettare che apra l'app. */}
+          <label className="label mt-4" htmlFor="auth-phone">
+            Cellulare
+          </label>
+          <input
+            id="auth-phone"
+            type="tel"
+            required
+            inputMode="tel"
+            autoComplete="tel"
+            className="field"
+            placeholder="333 1234567"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          <p className="mt-1.5 text-xs text-slate-500">
+            Serve al coach per avvisarti se qualcosa cambia.
           </p>
         </div>
       )}

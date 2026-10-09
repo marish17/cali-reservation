@@ -38,6 +38,9 @@ export default function HomeView() {
   // Chi si registra senza prenotare non passa dal modulo che chiede il
   // nome: al coach arriverebbe un indirizzo email e basta.
   const [needsName, setNeedsName] = useState(false);
+  // Chi si è registrato prima che il numero fosse obbligatorio non va
+  // bloccato, ma glielo si può chiedere.
+  const [needsPhone, setNeedsPhone] = useState(false);
   const [me, setMe] = useState<Membership | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -54,6 +57,7 @@ export default function HomeView() {
       setView("prenota");
       setHas({ workout: false, bookings: false });
       setNeedsName(false);
+      setNeedsPhone(false);
       setMe(null);
       setIsAdmin(false);
       return;
@@ -73,9 +77,10 @@ export default function HomeView() {
 
     const workout = ((w.data as unknown[]) ?? []).length > 0;
     const bookings = ((b.data as unknown[]) ?? []).length > 0;
-    const profile = ((p.data as { display_name: string | null }[]) ?? [])[0];
+    const profile = ((p.data as { display_name: string | null; phone: string | null }[]) ?? [])[0];
     const membership = ((m.data as Membership[]) ?? [])[0] ?? null;
-    setNeedsName(!profile?.display_name);
+    setNeedsName(!profile?.display_name?.trim());
+    setNeedsPhone(!profile?.phone?.trim());
     setMe(membership);
     setIsAdmin(Boolean(a.data));
     setHas({ workout, bookings });
@@ -147,6 +152,20 @@ export default function HomeView() {
             </section>
           )}
 
+          {/* Manca un recapito: non si blocca nessuno, lo si chiede. */}
+          {session && !needsName && needsPhone && (
+            <section className="card mb-5">
+              <h2 className="text-base font-semibold text-white">Lasciaci un numero</h2>
+              <p className="mt-1.5 text-sm text-slate-300">
+                Serve al tuo coach per avvisarti se un allenamento salta o se
+                cambia qualcosa. Ci vuole un minuto.
+              </p>
+              <Link href="/profilo" className="btn-primary mt-3">
+                Aggiungi il cellulare
+              </Link>
+            </section>
+          )}
+
           {/* Iscritto e senza scheda: non è un equivoco da spiegare, è
               solo una scheda che il coach non ha ancora scritto. */}
           {me?.enrolled && !has.workout && (
@@ -178,11 +197,12 @@ export default function HomeView() {
               {needsName && (
                 <>
                   <p className="mt-3 text-sm text-slate-400">
-                    Intanto dicci come ti chiami, altrimenti il coach vede
-                    solo il tuo indirizzo email e non sa chi sei.
+                    Intanto dicci come ti chiami{needsPhone && " e lasciaci un numero"},
+                    altrimenti il coach vede solo il tuo indirizzo email e non
+                    sa chi sei.
                   </p>
                   <Link href="/profilo" className="btn-primary mt-3">
-                    Aggiungi nome e foto
+                    Completa il profilo
                   </Link>
                 </>
               )}

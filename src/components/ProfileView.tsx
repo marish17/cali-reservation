@@ -10,12 +10,18 @@ import { useSession } from "@/lib/useSession";
 import { bookingErrorMessage } from "@/lib/errors";
 import { resizeToSquare } from "@/lib/resizeImage";
 
-type Profile = { display_name: string | null; avatar_path: string | null; email: string | null };
+type Profile = {
+  display_name: string | null;
+  avatar_path: string | null;
+  email: string | null;
+  phone: string | null;
+};
 
 export default function ProfileView() {
   const { session, loading: sessionLoading } = useSession();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -26,6 +32,7 @@ export default function ProfileView() {
     const row = ((data as Profile[]) ?? [])[0] ?? null;
     setProfile(row);
     setName(row?.display_name ?? "");
+    setPhone(row?.phone ?? "");
   }, [session]);
 
   useEffect(() => {
@@ -44,6 +51,19 @@ export default function ProfileView() {
       setError(bookingErrorMessage(error));
       setStatus("idle");
       return;
+    }
+
+    // Chi si è registrato prima che il numero fosse obbligatorio non
+    // viene bloccato: se lo lascia vuoto, il resto si salva comunque.
+    if (phone.trim() && phone.trim() !== (profile?.phone ?? "")) {
+      const { error: phoneError } = await supabase.rpc("save_my_phone", {
+        p_phone: phone.trim(),
+      });
+      if (phoneError) {
+        setError(bookingErrorMessage(phoneError));
+        setStatus("idle");
+        return;
+      }
     }
     setStatus("saved");
     void load();
@@ -175,6 +195,30 @@ export default function ProfileView() {
                 setStatus("idle");
               }}
             />
+          </div>
+
+          <div>
+            <label className="label" htmlFor="phone">
+              Cellulare
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              className="field"
+              placeholder="333 1234567"
+              value={phone}
+              onChange={(e) => {
+                setPhone(e.target.value);
+                setStatus("idle");
+              }}
+            />
+            <p className="mt-1.5 text-xs text-slate-500">
+              {profile?.phone
+                ? "Serve al coach per avvisarti se qualcosa cambia."
+                : "Non ce l'hai ancora: lascialo, così il coach può raggiungerti."}
+            </p>
           </div>
 
           <p className="text-xs text-slate-500">

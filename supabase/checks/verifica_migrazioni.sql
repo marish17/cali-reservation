@@ -82,6 +82,13 @@ with esiti as (
   -- Senza questa non compaiono gli esercizi letti dalle schede.
   select '0019 — esercizi proposti dalle schede',
          to_regprocedure('public.suggest_exercises()') is not null
+  union all
+  -- Senza questa non puoi vedere i telefoni nell'elenco allievi.
+  select '0020 — telefono obbligatorio e recapiti',
+         to_regprocedure('public.save_my_phone(text)') is not null
+     and exists (select 1 from information_schema.parameters
+                 where specific_schema = 'public' and parameter_name = 'phone'
+                   and specific_name like 'list_people%')
 )
 select migrazione,
        case when applicata then 'sì' else 'DA FARE' end as applicata

@@ -79,6 +79,15 @@ export default function PersonDetail({
             {person.display_name && person.email && (
               <p className="truncate text-xs text-slate-400">{person.email}</p>
             )}
+            {/* Toccabile: da telefono è il gesto con cui si chiama. */}
+            {person.phone && (
+              <a
+                href={`tel:${person.phone.replace(/[^0-9+]/g, "")}`}
+                className="text-xs font-medium text-accentSoft underline underline-offset-4"
+              >
+                {person.phone}
+              </a>
+            )}
           </div>
         </div>
 

@@ -155,9 +155,17 @@ function People() {
                       </span>
                     )}
                   </span>
-                  {p.display_name && p.email && (
-                    <span className="block truncate text-xs text-slate-500">{p.email}</span>
-                  )}
+                  {/* Recapiti a vista: per chiamare qualcuno non si deve
+                      aprire la sua scheda e cercarli. */}
+                  <span className="block truncate text-xs text-slate-500">
+                    {p.display_name && p.email ? p.email : null}
+                    {p.display_name && p.email && p.phone ? " · " : null}
+                    {p.phone ?? (
+                      <span className="text-slate-600">
+                        {p.display_name && p.email ? " · " : ""}telefono mancante
+                      </span>
+                    )}
+                  </span>
                   <span className="block truncate text-xs text-slate-400">
                     {p.intake_updated_at
                       ? `Questionario del ${formatDayLong(p.intake_updated_at.slice(0, 10))}`
