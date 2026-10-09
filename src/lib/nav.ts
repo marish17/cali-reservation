@@ -2,7 +2,9 @@ export type NavItem = { href: string; label: string };
 
 /** Le sezioni dell'area coach, in un posto solo. */
 export const ADMIN_NAV: NavItem[] = [
-  { href: "/admin", label: "Prenotazioni" },
+  // Lo stesso nome che porta la barra in basso: è una pagina sola, e
+  // chiamarla in due modi faceva credere che fossero due.
+  { href: "/admin", label: "Richieste" },
   { href: "/admin/allievi", label: "Allievi" },
   { href: "/admin/orari", label: "Coach e orari" },
   { href: "/admin/chiusure", label: "Chiusure" },
