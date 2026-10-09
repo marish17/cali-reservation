@@ -132,7 +132,7 @@ function AdminChrome({
   }, [increased, pending, acknowledge]);
 
   const items = hasWorkout
-    ? [...ADMIN_NAV, { href: "/scheda", label: "La mia scheda" }]
+    ? [...ADMIN_NAV, { href: "/", label: "La mia scheda" }]
     : ADMIN_NAV;
 
   const nav = (

@@ -15,6 +15,25 @@ export default function AdminPeoplePage() {
   );
 }
 
+/**
+ * Cosa dire di una persona in una riga.
+ *
+ * La prova è una sola e si fa una volta: per chi è già iscritto la sua
+ * data non serve a niente, e per chi si è iscritto prima che l'app
+ * esistesse non c'è proprio. A loro interessa invece se la scheda c'è.
+ */
+function stateOf(p: Person): string {
+  if (p.enrolled) {
+    return p.has_workout
+      ? "Scheda attiva"
+      : p.intake_updated_at
+        ? "Questionario fatto, scheda da scrivere"
+        : "Scheda e questionario da fare";
+  }
+  if (p.last_booking) return `Prova il ${formatDayLong(p.last_booking)}`;
+  return "Registrato, nessuna prova";
+}
+
 function People() {
   const [people, setPeople] = useState<Person[]>([]);
   const [coaches, setCoaches] = useState<Coach[]>([]);
@@ -167,11 +186,7 @@ function People() {
                     )}
                   </span>
                   <span className="block truncate text-xs text-slate-400">
-                    {p.intake_updated_at
-                      ? `Questionario del ${formatDayLong(p.intake_updated_at.slice(0, 10))}`
-                      : p.last_booking
-                        ? `Ultima prova ${formatDayLong(p.last_booking)}`
-                        : "Nessuna prova"}
+                    {stateOf(p)}
                     {coach && ` · ${coach.name}`}
                   </span>
                 </span>

@@ -85,7 +85,8 @@ export default function AppTabs() {
   // sottopagina, e «Altro» non si accenderebbe mai.
   const coveredByTab =
     samePath(pathname, "/admin") ||
-    ["/admin/allievi", "/scheda", "/timer"].some((h) => underPath(pathname, h));
+    ["/admin/allievi", "/timer"].some((h) => underPath(pathname, h)) ||
+    samePath(pathname, "/");
   const inOther = pathname.startsWith("/admin") && !coveredByTab;
 
   const tabs: Tab[] = me.admin
@@ -113,8 +114,10 @@ export default function AppTabs() {
                 key: "scheda",
                 label: "Scheda",
                 icon: IconSheet,
-                href: "/scheda",
-                active: underPath(pathname, "/scheda"),
+                // La scheda sta sulla pagina iniziale, per tutti: due
+                // pagine che mostrano la stessa cosa erano il difetto.
+                href: "/",
+                active: samePath(pathname, "/"),
               },
             ]
           : []),
@@ -139,7 +142,7 @@ export default function AppTabs() {
           label: me.trains ? "Scheda" : "Prenota",
           icon: me.trains ? IconSheet : IconCalendar,
           href: "/",
-          active: samePath(pathname, "/") || underPath(pathname, "/scheda"),
+          active: samePath(pathname, "/"),
         },
         {
           key: "timer",
