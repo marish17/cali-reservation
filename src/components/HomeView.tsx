@@ -7,6 +7,7 @@ import CoachHours from "@/components/CoachHours";
 import InstallHint from "@/components/InstallHint";
 import MyBookings from "@/components/MyBookings";
 import MyWorkout from "@/components/MyWorkout";
+import PageHeader from "@/components/PageHeader";
 import SetupNotice from "@/components/SetupNotice";
 import TopBar from "@/components/TopBar";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
@@ -100,9 +101,18 @@ export default function HomeView() {
 
   const gymName = settings?.gym_name ?? "Calisthenics Academy";
 
+  // Chi si allena vede la pagina fatta per la scheda, non la home
+  // delle prenotazioni con la scheda infilata dentro: intestazione
+  // pulita, niente richiamo alla prova gratuita, niente linguette.
+  const trains = Boolean(session && (has.workout || me?.enrolled));
+
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-10 pt-3 sm:pb-16 sm:pt-6">
-      <TopBar gymName={gymName} hideRequests={me?.enrolled ?? false} />
+      {trains ? (
+        <PageHeader title="La mia scheda" />
+      ) : (
+        <TopBar gymName={gymName} hideRequests={me?.enrolled ?? false} />
+      )}
 
       {!isSupabaseConfigured ? (
         <SetupNotice />
@@ -110,7 +120,7 @@ export default function HomeView() {
         <p className="text-sm text-slate-400">Caricamento…</p>
       ) : (
         <>
-          {view === "prenota" && (
+          {!trains && view === "prenota" && (
             <header className="mb-6 sm:mb-8">
               <h1 className="text-[26px] font-bold leading-[1.15] sm:text-4xl">
                 Prenota la tua prova gratuita
@@ -208,12 +218,12 @@ export default function HomeView() {
             </section>
           )}
 
-          {view === "prenota" && <InstallHint />}
+          {!trains && view === "prenota" && <InstallHint />}
 
           {/* Le altre sezioni restano raggiungibili: la scelta di
               partenza è un'ipotesi, non una gabbia. Per chi è iscritto
               invece non è un'ipotesi: le prove non lo riguardano. */}
-          {session && !me?.enrolled && (has.workout || has.bookings) && (
+          {!trains && session && !me?.enrolled && (has.workout || has.bookings) && (
             <nav className="mb-5 flex gap-2">
               {has.workout && (
                 <Tab label="Scheda" on={view === "scheda"} onClick={() => setView("scheda")} />
@@ -221,6 +231,19 @@ export default function HomeView() {
               <Tab label="Richieste" on={view === "richieste"} onClick={() => setView("richieste")} />
               <Tab label="Prenota" on={view === "prenota"} onClick={() => setView("prenota")} />
             </nav>
+          )}
+
+          {trains && has.bookings && (
+            <p className="mb-5 text-sm text-slate-400">
+              Hai una prova in sospeso:{" "}
+              <Link
+                href="/le-mie-prenotazioni"
+                className="text-accentSoft underline underline-offset-4"
+              >
+                guarda a che punto è
+              </Link>
+              .
+            </p>
           )}
 
           {view === "scheda" && (
