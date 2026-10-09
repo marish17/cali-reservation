@@ -39,6 +39,7 @@ export default function HomeView() {
   // nome: al coach arriverebbe un indirizzo email e basta.
   const [needsName, setNeedsName] = useState(false);
   const [me, setMe] = useState<Membership | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -54,10 +55,11 @@ export default function HomeView() {
       setHas({ workout: false, bookings: false });
       setNeedsName(false);
       setMe(null);
+      setIsAdmin(false);
       return;
     }
 
-    const [w, b, p, m] = await Promise.all([
+    const [w, b, p, m, a] = await Promise.all([
       supabase.rpc("get_my_workout"),
       supabase
         .from("bookings")
@@ -66,6 +68,7 @@ export default function HomeView() {
         .in("status", ["pending", "approved"]),
       supabase.rpc("get_my_profile"),
       supabase.rpc("get_my_membership"),
+      supabase.rpc("is_admin"),
     ]);
 
     const workout = ((w.data as unknown[]) ?? []).length > 0;
@@ -74,6 +77,7 @@ export default function HomeView() {
     const membership = ((m.data as Membership[]) ?? [])[0] ?? null;
     setNeedsName(!profile?.display_name);
     setMe(membership);
+    setIsAdmin(Boolean(a.data));
     setHas({ workout, bookings });
 
     // Chi è iscritto la prova non la fa: il calendario e le richieste
@@ -94,7 +98,7 @@ export default function HomeView() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-10 pt-3 sm:pb-16 sm:pt-6">
-      <TopBar gymName={gymName} hideRequests={me?.enrolled ?? false} />
+      <TopBar gymName={gymName} hideRequests={me?.enrolled ?? false} isAdmin={isAdmin} />
 
       {!isSupabaseConfigured ? (
         <SetupNotice />
@@ -248,9 +252,13 @@ export default function HomeView() {
           <a className="inline-flex min-h-[40px] items-center hover:text-slate-300" href="/privacy">
             Informativa privacy
           </a>
-          <a className="inline-flex min-h-[40px] items-center hover:text-slate-300" href="/admin">
-            Area coach
-          </a>
+          {/* Da sloggati resta: è da lì che i coach raggiungono il loro
+              accesso. Da dentro, solo a chi le chiavi ce l'ha davvero. */}
+          {(!session || isAdmin) && (
+            <a className="inline-flex min-h-[40px] items-center hover:text-slate-300" href="/admin">
+              Area coach
+            </a>
+          )}
         </div>
       </footer>
     </main>
