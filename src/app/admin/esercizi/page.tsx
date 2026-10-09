@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import ExerciseSuggestions from "@/components/ExerciseSuggestions";
 import { supabase } from "@/lib/supabase";
 import { bookingErrorMessage } from "@/lib/errors";
 import type { Exercise, ExerciseUnit } from "@/lib/types";
@@ -61,6 +62,8 @@ export default function AdminExercisesPage() {
 
   return (
     <div className="space-y-6">
+      <ExerciseSuggestions onAdded={load} />
+
       <section className="card">
         <h2 className="text-base font-semibold">Esercizi</h2>
         <p className="mt-1 text-sm text-slate-400">
@@ -136,7 +139,12 @@ export default function AdminExercisesPage() {
         )}
         <ul className="mt-3 space-y-2">
           {active.map((item) => (
-            <ExerciseRow key={item.id} item={item} onToggle={() => void toggle(item)} />
+            <ExerciseRow
+              key={item.id}
+              item={item}
+              onToggle={() => void toggle(item)}
+              onChanged={load}
+            />
           ))}
         </ul>
       </section>
@@ -150,7 +158,12 @@ export default function AdminExercisesPage() {
           </p>
           <ul className="mt-3 space-y-2">
             {retired.map((item) => (
-              <ExerciseRow key={item.id} item={item} onToggle={() => void toggle(item)} />
+              <ExerciseRow
+                key={item.id}
+                item={item}
+                onToggle={() => void toggle(item)}
+                onChanged={load}
+              />
             ))}
           </ul>
         </section>
@@ -159,15 +172,77 @@ export default function AdminExercisesPage() {
   );
 }
 
-function ExerciseRow({ item, onToggle }: { item: Exercise; onToggle: () => void }) {
+function ExerciseRow({
+  item,
+  onToggle,
+  onChanged,
+}: {
+  item: Exercise;
+  onToggle: () => void;
+  onChanged: () => void | Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [note, setNote] = useState(item.notes ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function saveNote() {
+    setSaving(true);
+    await supabase
+      .from("exercises")
+      .update({ notes: note.trim() || null })
+      .eq("id", item.id);
+    setSaving(false);
+    setEditing(false);
+    await onChanged();
+  }
+
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-ink/40 px-3 py-2.5 text-sm">
-      <span className="font-medium">{item.name}</span>
-      <span className="badge">{UNIT_LABEL[item.unit]}</span>
-      {item.category && <span className="text-xs text-slate-400">{item.category}</span>}
-      <button className="btn-ghost ml-auto !min-h-[34px] !px-2.5 text-xs" onClick={onToggle}>
-        {item.active ? "Ritira" : "Rimetti in uso"}
-      </button>
+    <li className="rounded-xl border border-line bg-ink/40 px-3 py-2.5 text-sm">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="font-medium">{item.name}</span>
+        <span className="badge">{UNIT_LABEL[item.unit]}</span>
+        {item.category && <span className="text-xs text-slate-400">{item.category}</span>}
+        <button className="btn-ghost ml-auto !min-h-[34px] !px-2.5 text-xs" onClick={onToggle}>
+          {item.active ? "Ritira" : "Rimetti in uso"}
+        </button>
+      </div>
+
+      {/* La nota compare al coach mentre scrive la scheda, nel momento
+          in cui gli serve ricordarsi come va eseguito. */}
+      {editing ? (
+        <div className="mt-2.5 flex gap-2">
+          <input
+            className="field !py-2"
+            autoFocus
+            placeholder="Presa prona, gomiti stretti…"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void saveNote();
+              if (e.key === "Escape") {
+                setNote(item.notes ?? "");
+                setEditing(false);
+              }
+            }}
+          />
+          <button
+            className="btn-ghost !min-h-[42px] shrink-0 !px-3 text-xs"
+            onClick={() => void saveNote()}
+            disabled={saving}
+          >
+            Salva
+          </button>
+        </div>
+      ) : (
+        <button
+          className="mt-1.5 block text-left text-xs text-slate-400 hover:text-slate-200"
+          onClick={() => setEditing(true)}
+        >
+          {item.notes?.trim() || (
+            <span className="text-slate-600">+ aggiungi una nota</span>
+          )}
+        </button>
+      )}
     </li>
   );
 }

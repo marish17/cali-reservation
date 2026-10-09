@@ -17,6 +17,7 @@ const NAV = [
   { href: "/admin/orari", label: "Coach e orari" },
   { href: "/admin/chiusure", label: "Chiusure" },
   { href: "/admin/esercizi", label: "Esercizi" },
+  { href: "/timer", label: "Timer" },
   { href: "/admin/impostazioni", label: "Impostazioni" },
   { href: "/admin/accessi", label: "Accessi" },
 ];

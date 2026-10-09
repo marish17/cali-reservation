@@ -78,6 +78,10 @@ with esiti as (
      and exists (select 1 from information_schema.parameters
                  where specific_schema = 'public' and parameter_name = 'p_notify'
                    and specific_name like 'save_workout%')
+  union all
+  -- Senza questa non compaiono gli esercizi letti dalle schede.
+  select '0019 — esercizi proposti dalle schede',
+         to_regprocedure('public.suggest_exercises()') is not null
 )
 select migrazione,
        case when applicata then 'sì' else 'DA FARE' end as applicata

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { bookingErrorMessage } from "@/lib/errors";
+import ExercisePicker from "@/components/ExercisePicker";
 import { toWorkout, type WorkoutRow } from "@/lib/types";
 
 type Draft = { day_id: string | null; title: string; body: string };
@@ -67,6 +68,37 @@ export default function WorkoutEditor({
 
   function edit(index: number, patch: Partial<Draft>) {
     setDays((prev) => prev.map((d, i) => (i === index ? { ...d, ...patch } : d)));
+  }
+
+  /**
+   * Infila il nome dove sta il cursore, non in fondo: il coach sta
+   * scrivendo una riga, e trovarsi la parola dieci righe più giù
+   * costerebbe più tempo di quanto ne fa risparmiare.
+   */
+  function insertAtCursor(name: string) {
+    const el = bodyRef.current;
+    const body = days[open]?.body ?? "";
+    if (!el) {
+      edit(open, { body: body + (body && !body.endsWith("\n") ? "\n" : "") + name });
+      return;
+    }
+
+    const start = el.selectionStart ?? body.length;
+    const end = el.selectionEnd ?? start;
+    const before = body.slice(0, start);
+    // A metà riga ci vuole uno spazio, a inizio riga no.
+    const glue = before === "" || before.endsWith("\n") || before.endsWith(" ") ? "" : " ";
+    const next = before + glue + name + body.slice(end);
+
+    edit(open, { body: next });
+
+    const caret = start + glue.length + name.length;
+    // Lo stato si aggiorna dopo: il cursore va rimesso quando il campo
+    // ha già il testo nuovo, se no salta in fondo.
+    window.requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(caret, caret);
+    });
   }
 
   async function save() {
@@ -188,6 +220,10 @@ export default function WorkoutEditor({
           value={days[open]?.title ?? ""}
           onChange={(e) => edit(open, { title: e.target.value })}
         />
+
+        <div className="mt-4 border-t border-line pt-4">
+          <ExercisePicker onPick={insertAtCursor} />
+        </div>
 
         <label className="label mt-4" htmlFor="d-body">
           Allenamento
