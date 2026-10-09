@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Exercise } from "@/lib/types";
 
@@ -17,6 +17,7 @@ export default function ExercisePicker({
   onPick: (name: string) => void;
 }) {
   const [items, setItems] = useState<Exercise[]>([]);
+  const [query, setQuery] = useState("");
   const [hint, setHint] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
@@ -50,6 +51,15 @@ export default function ExercisePicker({
     onPick(name);
   }
 
+  // Con quaranta esercizi in libreria una striscia che si allunga
+  // all'infinito spinge fuori schermo il campo in cui si scrive: è il
+  // contrario di quello che doveva servire. Si cerca e si scorre.
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((e) => e.name.toLowerCase().includes(q));
+  }, [items, query]);
+
   if (items.length === 0 && !adding) {
     return (
       <button
@@ -64,10 +74,28 @@ export default function ExercisePicker({
 
   return (
     <div>
-      <p className="label !mb-2">Tocca per inserire</p>
+      <div className="mb-2 flex items-center gap-2">
+        <p className="label !mb-0 shrink-0">Tocca per inserire</p>
+        {items.length > 8 && (
+          <input
+            className="field !w-auto min-w-0 flex-1 !py-1.5 !text-[13px]"
+            type="search"
+            placeholder="Cerca…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        )}
+      </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {items.map((e) => (
+      {/* Tre righe al massimo, poi si scorre: così il campo di
+          scrittura resta sempre sotto gli occhi. */}
+      <div className="flex max-h-[7.5rem] flex-wrap gap-1.5 overflow-y-auto overscroll-contain rounded-xl border border-line bg-ink/40 p-2">
+        {shown.length === 0 && (
+          <p className="px-1 py-1.5 text-[13px] text-slate-500">
+            Nessun esercizio con questo nome.
+          </p>
+        )}
+        {shown.map((e) => (
           <button
             key={e.id}
             type="button"
@@ -82,16 +110,20 @@ export default function ExercisePicker({
           </button>
         ))}
 
-        {!adding && (
-          <button
-            type="button"
-            className="min-h-[36px] rounded-lg border border-dashed border-line px-2.5 text-[13px] text-slate-400 hover:border-slate-500 hover:bg-white/5"
-            onClick={() => setAdding(true)}
-          >
-            + nuovo
-          </button>
-        )}
       </div>
+
+      {!adding && (
+        <button
+          type="button"
+          className="mt-2 text-[13px] text-slate-400 underline underline-offset-4 hover:text-slate-200"
+          onClick={() => {
+            setAdding(true);
+            setQuery("");
+          }}
+        >
+          + aggiungi un esercizio
+        </button>
+      )}
 
       {adding && (
         <div className="mt-2 flex gap-2">

@@ -86,8 +86,9 @@ export default function WorkoutEditor({
     const start = el.selectionStart ?? body.length;
     const end = el.selectionEnd ?? start;
     const before = body.slice(0, start);
-    // A metà riga ci vuole uno spazio, a inizio riga no.
-    const glue = before === "" || before.endsWith("\n") || before.endsWith(" ") ? "" : " ";
+    // Un esercizio per riga: toccandone tre di fila si vogliono tre
+    // righe su cui scrivere le ripetizioni, non tre nomi in fila.
+    const glue = before === "" || before.endsWith("\n") ? "" : "\n";
     const next = before + glue + name + body.slice(end);
 
     edit(open, { body: next });
