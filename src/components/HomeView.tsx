@@ -107,8 +107,16 @@ export default function HomeView() {
   const trains = Boolean(session && (has.workout || me?.enrolled));
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-10 pt-3 sm:pb-16 sm:pt-6">
-      {trains ? (
+    <main className="mx-auto w-full max-w-3xl px-4 pb-10 sm:pb-16">
+      {/* Finché non si sa chi sta guardando, nessuna intestazione.
+          Disegnarne una e poi sostituirla sembra un ricaricamento a
+          metà: si vedeva la barra della home e un attimo dopo «La mia
+          scheda» al suo posto. */}
+      {view === null ? (
+        <div className="app-header mb-6 sm:mb-8">
+          <div className="h-[57px]" />
+        </div>
+      ) : trains ? (
         <PageHeader title="La mia scheda" />
       ) : (
         <TopBar gymName={gymName} hideRequests={me?.enrolled ?? false} />
