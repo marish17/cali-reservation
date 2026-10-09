@@ -102,7 +102,7 @@ export default function HomeView() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-10 pt-3 sm:pb-16 sm:pt-6">
-      <TopBar gymName={gymName} hideRequests={me?.enrolled ?? false} isAdmin={isAdmin} />
+      <TopBar gymName={gymName} hideRequests={me?.enrolled ?? false} />
 
       {!isSupabaseConfigured ? (
         <SetupNotice />

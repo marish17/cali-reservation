@@ -19,11 +19,9 @@ export default function TopBar({
   // Chi è iscritto le prove non le richiede: quel pulsante lo
   // porterebbe a una pagina che per lui è sempre vuota.
   hideRequests = false,
-  isAdmin = false,
 }: {
   gymName: string;
   hideRequests?: boolean;
-  isAdmin?: boolean;
 }) {
   const { session } = useSession();
 
@@ -62,7 +60,7 @@ export default function TopBar({
         )}
       </div>
 
-      {session && <SessionRow email={session.user.email ?? null} isAdmin={isAdmin} />}
+      {session && <SessionRow email={session.user.email ?? null} />}
     </div>
   );
 }
@@ -74,7 +72,7 @@ function MyUpdatesBadge() {
 }
 
 /** Chi sei, con nome e foto invece dell'indirizzo email. */
-function SessionRow({ email, isAdmin }: { email: string | null; isAdmin: boolean }) {
+function SessionRow({ email }: { email: string | null }) {
   const [profile, setProfile] = useState<{ display_name: string | null; avatar_path: string | null } | null>(
     null
   );
@@ -92,16 +90,11 @@ function SessionRow({ email, isAdmin }: { email: string | null; isAdmin: boolean
         <Avatar name={profile?.display_name} email={email} path={profile?.avatar_path} size={22} />
         <span className="truncate">{profile?.display_name || email}</span>
       </Link>
-      {/* A chi non ha le chiavi non si mostra la porta: ci cliccava e
-          trovava «accesso non autorizzato», che è un vicolo cieco. */}
-      {isAdmin && (
-        <Link href="/admin" className="ml-auto shrink-0 hover:text-slate-300">
-          Area coach
-        </Link>
-      )}
-      <button className={`shrink-0 hover:text-slate-300${isAdmin ? "" : " ml-auto"}`} onClick={() => void supabase.auth.signOut()}>
-        Esci
-      </button>
+      {/* Né «Area coach» né «Esci».
+          Il primo a un coach già dentro l'app non dice niente: l'area
+          coach è la barra in basso, non un posto dove andare.
+          Il secondo stava in quattro punti diversi; ora vive dove uno
+          lo cerca davvero, cioè nel profilo e nel menu «Altro». */}
     </div>
   );
 }

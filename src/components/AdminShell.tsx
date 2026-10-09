@@ -170,7 +170,12 @@ function AdminChrome({
           <CountBadge count={pending} />
         </span>
 
-        <button className="btn-ghost ml-auto !min-h-[36px] !px-3 text-xs" onClick={onSignOut}>
+        {/* Sul telefono si esce da «Altro» o dal profilo. Qui serve
+            solo sul computer, dove la barra in basso non c'è. */}
+        <button
+          className="btn-ghost ml-auto !hidden !min-h-[36px] !px-3 text-xs lg:!inline-flex"
+          onClick={onSignOut}
+        >
           Esci
         </button>
       </header>
