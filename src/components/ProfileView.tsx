@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Avatar from "@/components/Avatar";
+import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import ChangePassword from "@/components/ChangePassword";
 import PushToggle from "@/components/PushToggle";
@@ -252,6 +253,18 @@ export default function ProfileView() {
             qualcosa senza aprire l&apos;app.
           </p>
           <PushToggle audience={isAdmin ? "coach" : "student"} />
+        </section>
+      )}
+
+      {session && (
+        <section className="card mt-5">
+          <h2 className="text-base font-semibold">Privacy</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Quali dati teniamo, perché, e cosa puoi chiederci di fare.
+          </p>
+          <Link href="/privacy" className="btn-ghost mt-3 w-full sm:w-auto">
+            Leggi l&apos;informativa
+          </Link>
         </section>
       )}
 

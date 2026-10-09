@@ -269,26 +269,40 @@ export default function HomeView() {
         </>
       )}
 
+      {/* L'informativa sta nel profilo, insieme alle altre cose che si
+          guardano una volta. Qui resta solo quello che serve a chi deve
+          ancora decidere se venire: i recapiti della palestra.
+
+          Un piè di pagina vuoto è una riga di separazione che non
+          separa niente: se non c'è nulla da dire, non compare. */}
+      {(!session || isAdmin || (!trains && (settings?.contact_email || settings?.contact_phone))) && (
       <footer className="mt-10 border-t border-line pt-4 text-xs text-slate-500">
-        {(settings?.contact_email || settings?.contact_phone) && (
+        {!trains && (settings?.contact_email || settings?.contact_phone) && (
           <div className="flex flex-wrap gap-x-4 gap-y-1 py-2">
             {settings?.contact_email && <span>{settings.contact_email}</span>}
             {settings?.contact_phone && <span>{settings.contact_phone}</span>}
           </div>
         )}
         <div className="flex items-center justify-between">
-          <a className="inline-flex min-h-[40px] items-center hover:text-slate-300" href="/privacy">
-            Informativa privacy
-          </a>
-          {/* Da sloggati resta: è da lì che i coach raggiungono il loro
-              accesso. Da dentro, solo a chi le chiavi ce l'ha davvero. */}
-          {(!session || isAdmin) && (
-            <a className="inline-flex min-h-[40px] items-center hover:text-slate-300" href="/admin">
+          {!session && (
+            <a className="inline-flex min-h-[40px] items-center hover:text-slate-300" href="/privacy">
+              Informativa privacy
+            </a>
+          )}
+          {/* Sul telefono il pannello sta nella barra in basso. Sul
+              computer la barra non c'è, e senza questo un coach non
+              avrebbe più modo di arrivarci. */}
+          {isAdmin && (
+            <a
+              className="ml-auto hidden min-h-[40px] items-center hover:text-slate-300 lg:inline-flex"
+              href="/admin"
+            >
               Area coach
             </a>
           )}
         </div>
       </footer>
+      )}
     </main>
   );
 }
